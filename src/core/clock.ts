@@ -4,18 +4,20 @@ import { interval, animationFrameScheduler } from 'rxjs';
 import { scan } from 'rxjs/operators';
 import produce,  { Draft } from 'immer'
 
-const intialState: FrameInterface = {
+const initialState: FrameInterface = {
     frameStartTime: performance.now(),
-    deltaTime: this.frameStartTime,
+    deltaTime: 0,
 };
 
 const clock = interval(1000/FPS, animationFrameScheduler);
+
 const updateTime = produce((draft: Draft<FrameInterface>, previousTime) => {
   draft.frameStartTime = performance.now();
   draft.deltaTime = draft.frameStartTime - previousTime.frameStartTime;
 })
+
 export default clock.pipe(
-  scan(previous => updateTime(previous)),
+  scan(previous => updateTime(initialState, previous), initialState),
 )
 
 /*
