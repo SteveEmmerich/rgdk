@@ -1,6 +1,6 @@
 {
   "name": "rgdk",
-  "version": "0.0.1",
+  "version": "0.0.2-0",
   "private": false,
   "main": "dist/rgdk.cjs.js",
   "module": "dist/rgdk.esm.js",
@@ -19,7 +19,7 @@
   },
   "publishConfig": {
     "access": "public"
-},
+  },
   "author": "Widdle Tech Inc.",
   "license": "MIT",
   "dependencies": {
