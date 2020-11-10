@@ -1,6 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
+import ts from '@wessberg/rollup-plugin-ts';
 import pkg from './package.json';
 
 export default [
@@ -12,9 +12,10 @@ export default [
       format: 'umd',
     },
     plugins: [
+      ts(),
       resolve(),
-      commonjs(),
-      typescript()
+      commonjs()
+      
     ],
   },
   {
@@ -25,6 +26,6 @@ export default [
 
     { file: pkg.module, format: 'es' }
   ],
-  plugins: [typescript()],
+  plugins: [ts()],
 }
 ];
