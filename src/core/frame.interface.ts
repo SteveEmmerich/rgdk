@@ -1,5 +1,7 @@
-export default interface FrameInterface {
+interface FrameInterface {
   frameStartTime: number;
   deltaTime: number;
 
 };
+
+export default FrameInterface
