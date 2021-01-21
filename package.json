@@ -25,7 +25,7 @@
   "author": "Widdle Tech Inc.",
   "license": "MIT",
   "dependencies": {
-    "immer": "^3.2.0",
+    "immer": "^8.0.1",
     "rxjs": "^6.5.2"
   },
   "devDependencies": {
