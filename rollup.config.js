@@ -19,6 +19,19 @@ export default [
     ],
   },
   {
+    input: 'src/main.ts', // New input for the main application
+    output: {
+      name: 'RGDKMain', // UMD bundle name for the main application
+      file: 'dist/main.umd.js', // Output file for the main application
+      format: 'umd',
+    },
+    plugins: [ // Shared plugins configuration
+      ts(),
+      resolve(),
+      commonjs(),
+    ],
+  },
+  {
   input: 'src/index.ts',
   external: Object.keys(pkg.dependencies),
   output: [
