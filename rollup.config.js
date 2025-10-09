@@ -1,7 +1,9 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import ts from '@wessberg/rollup-plugin-ts';
-import pkg from './package.json';
+import typescript from '@rollup/plugin-typescript';
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default [
   {
@@ -12,7 +14,7 @@ export default [
       format: 'umd',
     },
     plugins: [
-      ts(),
+      typescript(),
       resolve(),
       commonjs()
       
@@ -26,6 +28,6 @@ export default [
 
     { file: pkg.module, format: 'es' }
   ],
-  plugins: [ts()],
+  plugins: [typescript()],
 }
 ];
