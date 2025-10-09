@@ -2543,7 +2543,473 @@
         fromEvent(document, 'touchend'),
     ]);
 
+    var AssetLoader = /** @class */ (function () {
+        function AssetLoader() {
+            this.cache = new Map();
+        }
+        /**
+         * Load assets from a manifest
+         * @param manifest - Object containing asset paths organized by type
+         * @returns Observable that emits loading progress
+         */
+        AssetLoader.prototype.load = function (manifest) {
+            var _this = this;
+            return new Observable(function (subscriber) {
+                var assets = [];
+                // Collect all assets to load
+                if (manifest.images) {
+                    Object.entries(manifest.images).forEach(function (_a) {
+                        var key = _a[0], url = _a[1];
+                        assets.push({ key: key, url: url, type: 'image' });
+                    });
+                }
+                if (manifest.audio) {
+                    Object.entries(manifest.audio).forEach(function (_a) {
+                        var key = _a[0], url = _a[1];
+                        assets.push({ key: key, url: url, type: 'audio' });
+                    });
+                }
+                if (manifest.data) {
+                    Object.entries(manifest.data).forEach(function (_a) {
+                        var key = _a[0], url = _a[1];
+                        assets.push({ key: key, url: url, type: 'data' });
+                    });
+                }
+                var total = assets.length;
+                var loaded = 0;
+                if (total === 0) {
+                    subscriber.next({ loaded: 0, total: 0, percentage: 100 });
+                    subscriber.complete();
+                    return;
+                }
+                // Load each asset
+                var loadPromises = assets.map(function (asset) {
+                    // Check cache first
+                    if (_this.cache.has(asset.key)) {
+                        loaded++;
+                        var progress = {
+                            loaded: loaded,
+                            total: total,
+                            percentage: Math.round((loaded / total) * 100),
+                            currentAsset: asset.key
+                        };
+                        subscriber.next(progress);
+                        return Promise.resolve();
+                    }
+                    return _this.loadAsset(asset.key, asset.url, asset.type)
+                        .then(function () {
+                        loaded++;
+                        var progress = {
+                            loaded: loaded,
+                            total: total,
+                            percentage: Math.round((loaded / total) * 100),
+                            currentAsset: asset.key
+                        };
+                        subscriber.next(progress);
+                    })
+                        .catch(function (error) {
+                        subscriber.error(new Error("Failed to load asset '" + asset.key + "' from '" + asset.url + "': " + error.message));
+                    });
+                });
+                Promise.all(loadPromises)
+                    .then(function () {
+                    subscriber.complete();
+                })
+                    .catch(function (error) {
+                    subscriber.error(error);
+                });
+            });
+        };
+        /**
+         * Get a loaded asset from the cache
+         * @param key - The asset key
+         * @returns The cached asset or null if not found
+         */
+        AssetLoader.prototype.get = function (key) {
+            return this.cache.get(key) || null;
+        };
+        /**
+         * Clear all cached assets
+         */
+        AssetLoader.prototype.clear = function () {
+            this.cache.clear();
+        };
+        /**
+         * Load a single asset
+         */
+        AssetLoader.prototype.loadAsset = function (key, url, type) {
+            switch (type) {
+                case 'image':
+                    return this.loadImage(key, url);
+                case 'audio':
+                    return this.loadAudio(key, url);
+                case 'data':
+                    return this.loadData(key, url);
+                default:
+                    return Promise.reject(new Error("Unknown asset type: " + type));
+            }
+        };
+        /**
+         * Load an image asset
+         */
+        AssetLoader.prototype.loadImage = function (key, url) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                var img = new Image();
+                img.onload = function () {
+                    _this.cache.set(key, img);
+                    resolve();
+                };
+                img.onerror = function () {
+                    reject(new Error("Failed to load image from " + url));
+                };
+                img.src = url;
+            });
+        };
+        /**
+         * Load an audio asset
+         */
+        AssetLoader.prototype.loadAudio = function (key, url) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                var audio = new Audio();
+                audio.oncanplaythrough = function () {
+                    _this.cache.set(key, audio);
+                    resolve();
+                };
+                audio.onerror = function () {
+                    reject(new Error("Failed to load audio from " + url));
+                };
+                audio.src = url;
+            });
+        };
+        /**
+         * Load a data (JSON) asset
+         */
+        AssetLoader.prototype.loadData = function (key, url) {
+            var _this = this;
+            return fetch(url)
+                .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("HTTP " + response.status + ": " + response.statusText);
+                }
+                return response.json();
+            })
+                .then(function (data) {
+                _this.cache.set(key, data);
+            });
+        };
+        return AssetLoader;
+    }());
+    // Export a singleton instance
+    var assetLoader = new AssetLoader();
+
+    /**
+     * Canvas-based sprite implementation
+     */
+    var CanvasSprite = /** @class */ (function () {
+        function CanvasSprite(config) {
+            this.x = 0;
+            this.y = 0;
+            this.rotation = 0;
+            this.scaleX = 1;
+            this.scaleY = 1;
+            this.visible = true;
+            this.alpha = 1;
+            this.texture = null;
+            this.width = 0;
+            this.height = 0;
+            this.anchorX = 0.5;
+            this.anchorY = 0.5;
+            if (config.texture) {
+                this.texture = config.texture;
+                this.width = config.width || this.texture.width || 0;
+                this.height = config.height || this.texture.height || 0;
+            }
+            this.x = config.x || 0;
+            this.y = config.y || 0;
+            if (config.anchor) {
+                this.anchorX = config.anchor.x;
+                this.anchorY = config.anchor.y;
+            }
+        }
+        CanvasSprite.prototype.render = function (ctx) {
+            if (!this.visible || !this.texture)
+                return;
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.scale(this.scaleX, this.scaleY);
+            var drawX = -this.width * this.anchorX;
+            var drawY = -this.height * this.anchorY;
+            ctx.drawImage(this.texture, drawX, drawY, this.width, this.height);
+            ctx.restore();
+        };
+        CanvasSprite.prototype.destroy = function () {
+            this.texture = null;
+        };
+        return CanvasSprite;
+    }());
+    /**
+     * Canvas-based renderer implementation
+     */
+    var CanvasRenderer = /** @class */ (function () {
+        function CanvasRenderer() {
+            this.canvas = null;
+            this.ctx = null;
+            this.sprites = [];
+            this.backgroundColor = '#000000';
+        }
+        /**
+         * Initialize the renderer
+         */
+        CanvasRenderer.prototype.init = function (config) {
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = config.width;
+            this.canvas.height = config.height;
+            this.ctx = this.canvas.getContext('2d');
+            if (!this.ctx) {
+                throw new Error('Failed to get 2D context');
+            }
+            if (config.backgroundColor !== undefined) {
+                this.backgroundColor = this.colorToHex(config.backgroundColor);
+            }
+            if (config.parent) {
+                config.parent.appendChild(this.canvas);
+            }
+            else {
+                document.body.appendChild(this.canvas);
+            }
+        };
+        /**
+         * Create a sprite
+         */
+        CanvasRenderer.prototype.createSprite = function (config) {
+            var sprite = new CanvasSprite(config);
+            this.sprites.push(sprite);
+            return sprite;
+        };
+        /**
+         * Render all sprites
+         */
+        CanvasRenderer.prototype.render = function () {
+            var _this = this;
+            if (!this.ctx || !this.canvas)
+                return;
+            // Clear canvas
+            this.ctx.fillStyle = this.backgroundColor;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            // Render all sprites
+            this.sprites.forEach(function (sprite) { return sprite.render(_this.ctx); });
+        };
+        /**
+         * Get the canvas element
+         */
+        CanvasRenderer.prototype.getView = function () {
+            if (!this.canvas) {
+                throw new Error('Renderer not initialized');
+            }
+            return this.canvas;
+        };
+        /**
+         * Resize the canvas
+         */
+        CanvasRenderer.prototype.resize = function (width, height) {
+            if (this.canvas) {
+                this.canvas.width = width;
+                this.canvas.height = height;
+            }
+        };
+        /**
+         * Destroy the renderer
+         */
+        CanvasRenderer.prototype.destroy = function () {
+            this.sprites.forEach(function (sprite) { return sprite.destroy(); });
+            this.sprites = [];
+            if (this.canvas && this.canvas.parentNode) {
+                this.canvas.parentNode.removeChild(this.canvas);
+            }
+            this.canvas = null;
+            this.ctx = null;
+        };
+        /**
+         * Convert a color number to hex string
+         */
+        CanvasRenderer.prototype.colorToHex = function (color) {
+            return '#' + color.toString(16).padStart(6, '0');
+        };
+        return CanvasRenderer;
+    }());
+    // Export a singleton instance
+    var canvasRenderer = new CanvasRenderer();
+
+    /**
+     * Sprite Manager utility
+     * Helps manage sprite lifecycle and batch operations
+     */
+    var SpriteManager = /** @class */ (function () {
+        function SpriteManager() {
+            this.sprites = new Set();
+        }
+        /**
+         * Add a sprite to the manager
+         */
+        SpriteManager.prototype.add = function (sprite) {
+            this.sprites.add(sprite);
+        };
+        /**
+         * Remove a sprite from the manager
+         */
+        SpriteManager.prototype.remove = function (sprite) {
+            this.sprites.delete(sprite);
+        };
+        /**
+         * Remove and destroy a sprite
+         */
+        SpriteManager.prototype.destroy = function (sprite) {
+            this.sprites.delete(sprite);
+            sprite.destroy();
+        };
+        /**
+         * Apply a function to all sprites
+         */
+        SpriteManager.prototype.forEach = function (fn) {
+            this.sprites.forEach(fn);
+        };
+        /**
+         * Filter sprites
+         */
+        SpriteManager.prototype.filter = function (predicate) {
+            var result = [];
+            this.sprites.forEach(function (sprite) {
+                if (predicate(sprite)) {
+                    result.push(sprite);
+                }
+            });
+            return result;
+        };
+        /**
+         * Destroy all sprites
+         */
+        SpriteManager.prototype.destroyAll = function () {
+            this.sprites.forEach(function (sprite) { return sprite.destroy(); });
+            this.sprites.clear();
+        };
+        Object.defineProperty(SpriteManager.prototype, "count", {
+            /**
+             * Get the number of sprites
+             */
+            get: function () {
+                return this.sprites.size;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        /**
+         * Get all sprites as an array
+         */
+        SpriteManager.prototype.getAll = function () {
+            return Array.from(this.sprites);
+        };
+        return SpriteManager;
+    }());
+
+    /**
+     * Texture utilities for creating simple textures programmatically
+     */
+    var TextureUtils = /** @class */ (function () {
+        function TextureUtils() {
+        }
+        /**
+         * Create a solid colored rectangle texture
+         */
+        TextureUtils.createRect = function (width, height, color) {
+            var canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, width, height);
+            return canvas;
+        };
+        /**
+         * Create a circle texture
+         */
+        TextureUtils.createCircle = function (radius, color, filled) {
+            if (filled === void 0) { filled = true; }
+            var size = radius * 2;
+            var canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            var ctx = canvas.getContext('2d');
+            ctx.beginPath();
+            ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+            if (filled) {
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+            else {
+                ctx.strokeStyle = color;
+                ctx.stroke();
+            }
+            return canvas;
+        };
+        /**
+         * Create a gradient circle texture (useful for particles)
+         */
+        TextureUtils.createGradientCircle = function (radius, innerColor, outerColor) {
+            if (outerColor === void 0) { outerColor = 'transparent'; }
+            var size = radius * 2;
+            var canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            var ctx = canvas.getContext('2d');
+            var gradient = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+            gradient.addColorStop(0, innerColor);
+            gradient.addColorStop(1, outerColor);
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+            ctx.fill();
+            return canvas;
+        };
+        /**
+         * Create a text texture
+         */
+        TextureUtils.createText = function (text, fontSize, color, fontFamily) {
+            if (fontSize === void 0) { fontSize = 24; }
+            if (color === void 0) { color = 'white'; }
+            if (fontFamily === void 0) { fontFamily = 'Arial'; }
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            ctx.font = fontSize + "px " + fontFamily;
+            var metrics = ctx.measureText(text);
+            canvas.width = Math.ceil(metrics.width);
+            canvas.height = fontSize * 1.5;
+            // Redraw with proper size
+            ctx.font = fontSize + "px " + fontFamily;
+            ctx.fillStyle = color;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 0, canvas.height / 2);
+            return canvas;
+        };
+        /**
+         * Convert a color number (0xRRGGBB) to CSS color string
+         */
+        TextureUtils.colorToString = function (color) {
+            return '#' + color.toString(16).padStart(6, '0');
+        };
+        return TextureUtils;
+    }());
+
+    exports.AssetLoader = AssetLoader;
+    exports.CanvasRenderer = CanvasRenderer;
     exports.FPS = FPS;
+    exports.SpriteManager = SpriteManager;
+    exports.TextureUtils = TextureUtils;
+    exports.assetLoader = assetLoader;
+    exports.canvasRenderer = canvasRenderer;
     exports.click$ = click$;
     exports.clock$ = clock$1;
     exports.keydown$ = keydown$;

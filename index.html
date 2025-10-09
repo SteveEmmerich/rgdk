@@ -1,3 +1,117 @@
-<h1>RxJS playground</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RGDK Demo - Simple Clicker</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #1a1a1a;
+      color: #fff;
+    }
+    h1 {
+      text-align: center;
+    }
+    p {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #game-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    canvas {
+      border: 2px solid #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>RGDK - Simple Clicker Demo</h1>
+  <p>Click anywhere on the canvas to spawn colored squares!</p>
+  <p>Open the console to see logs</p>
+  <div id="game-container"></div>
 
-<p>Open the console below to see results</p>
+  <!-- Load RxJS from CDN -->
+  <script src="https://unpkg.com/rxjs@6.5.2/bundles/rxjs.umd.min.js"></script>
+  
+  <!-- Load RGDK UMD bundle -->
+  <script src="./dist/core/index.umd.js"></script>
+
+  <script>
+    // Use RGDK from global scope (UMD)
+    const { clock$, click$, CanvasRenderer } = rgdk;
+
+    // Create and initialize the renderer
+    const renderer = new CanvasRenderer();
+    const container = document.getElementById('game-container');
+    
+    renderer.init({
+      width: 800,
+      height: 600,
+      backgroundColor: 0x222222,
+      parent: container
+    });
+
+    const canvas = renderer.getView();
+    const ctx = canvas.getContext('2d');
+
+    // Simple colored square as a sprite texture
+    function createColoredSquare(size, color) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = size;
+      tempCanvas.height = size;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.fillStyle = color;
+      tempCtx.fillRect(0, 0, size, size);
+      return tempCanvas;
+    }
+
+    // Create sprite textures with different colors
+    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    let colorIndex = 0;
+
+    // Instructions
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+
+    // Handle clicks to spawn sprites
+    click$.subscribe((clickEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = clickEvent.clientX - rect.left;
+      const y = clickEvent.clientY - rect.top;
+      
+      // Create a sprite at click position
+      const color = colors[colorIndex % colors.length];
+      colorIndex++;
+      const squareTexture = createColoredSquare(50, color);
+      
+      const sprite = renderer.createSprite({
+        texture: squareTexture,
+        x: x,
+        y: y,
+        anchor: { x: 0.5, y: 0.5 }
+      });
+      
+      // Add some rotation for visual interest
+      sprite.rotation = Math.random() * Math.PI * 2;
+      
+      console.log('Sprite created at (' + x + ', ' + y + ') with color ' + color);
+    });
+
+    // Game loop - render continuously
+    clock$.subscribe(() => {
+      renderer.render();
+      
+      // Draw instructions
+      ctx.fillText('Click anywhere to spawn sprites!', canvas.width / 2, 30);
+    });
+
+    console.log('RGDK Simple Clicker demo loaded! Click on the canvas to spawn sprites.');
+  </script>
+</body>
+</html>

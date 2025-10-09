@@ -80,6 +80,76 @@ const speed = 100; // pixels per second
 
 clock$.subscribe(frame => {
   const deltaSeconds = frame.deltaTime / 1000;
+  playerX += speed * deltaSeconds;
+});
+```
+
+## Using the Canvas Renderer
+
+RGDK includes a built-in Canvas renderer for 2D graphics:
+
+```typescript
+import { clock$, CanvasRenderer } from 'rgdk';
+
+// Create and initialize renderer
+const renderer = new CanvasRenderer();
+renderer.init({
+  width: 800,
+  height: 600,
+  backgroundColor: 0x1099bb
+});
+
+// Create a sprite (requires a texture)
+const sprite = renderer.createSprite({
+  texture: myImage, // HTMLImageElement or HTMLCanvasElement
+  x: 100,
+  y: 100,
+  anchor: { x: 0.5, y: 0.5 } // Center the sprite
+});
+
+// Update and render in game loop
+clock$.subscribe(() => {
+  sprite.rotation += 0.01; // Rotate the sprite
+  renderer.render();
+});
+```
+
+## Loading Assets
+
+Load images, audio, and data files with progress tracking:
+
+```typescript
+import { assetLoader } from 'rgdk';
+
+const manifest = {
+  images: {
+    'player': './assets/player.png',
+    'enemy': './assets/enemy.png'
+  },
+  audio: {
+    'bgm': './assets/music.mp3'
+  }
+};
+
+assetLoader.load(manifest).subscribe({
+  next: (progress) => {
+    console.log(`Loading: ${progress.percentage}%`);
+  },
+  complete: () => {
+    // All assets loaded, start the game
+    const playerImg = assetLoader.get<HTMLImageElement>('player');
+    startGame(playerImg);
+  },
+  error: (err) => {
+    console.error('Failed to load assets:', err);
+  }
+});
+```
+
+## Next Steps
+
+clock$.subscribe(frame => {
+  const deltaSeconds = frame.deltaTime / 1000;
   
   // Move 100 pixels per second, regardless of frame rate
   playerX += speed * deltaSeconds;
