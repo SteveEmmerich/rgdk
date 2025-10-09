@@ -39,6 +39,15 @@ Keyboard-controlled movement example (~150 lines):
 - Reactive input state management
 - Demonstrates game character control
 
+### particle-system.ts
+
+Particle system example (~200 lines):
+- Click to spawn particle bursts
+- Physics simulation with gravity
+- Particle lifecycle management
+- Alpha fading effects
+- Demonstrates advanced sprite management and animation
+
 ## Running the Examples
 
 Since RGDK is currently a library, these examples are meant to be integrated into your own projects. To use them:
