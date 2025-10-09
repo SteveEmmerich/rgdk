@@ -162,6 +162,120 @@ keydown$.subscribe((event: KeyboardEvent) => { /* ... */ });
 - **LOW Priority**: Asset management system
 - **LOW Priority**: CLI tool for project scaffolding
 
+## Entity Component System (ECS)
+
+### Overview
+
+RGDK is planned to include a lightweight ECS architecture that integrates seamlessly with reactive programming patterns. The ECS will be designed to work with RxJS observables and maintain type safety throughout.
+
+### ECS Architecture Principles
+
+1. **Reactive Integration**: Systems subscribe to the game loop observable and process entities each frame
+2. **Type Safety**: Components are type-safe with TypeScript interfaces and generics
+3. **Performance**: Target 1000+ entities running at 60fps
+4. **Composability**: Entities are composed of components; systems operate on entities with specific component combinations
+
+### Core Interfaces
+
+```typescript
+// Entity - container for components
+interface IEntity {
+  id: string;
+  addComponent<T extends IComponent>(component: T): void;
+  getComponent<T extends IComponent>(type: ComponentType<T>): T | null;
+  hasComponent(type: ComponentType<any>): boolean;
+  removeComponent(type: ComponentType<any>): void;
+}
+
+// System - logic that operates on entities with specific components
+interface ISystem {
+  update(entities: IEntity[], deltaTime: number): void;
+}
+
+// Component - data containers (no logic)
+interface IComponent {
+  // Components are pure data structures
+}
+```
+
+### ECS Usage Patterns
+
+#### Creating Entities and Components
+
+```typescript
+// Define a component
+interface PositionComponent extends IComponent {
+  x: number;
+  y: number;
+}
+
+interface VelocityComponent extends IComponent {
+  vx: number;
+  vy: number;
+}
+
+// Create an entity
+const entity = entityManager.createEntity();
+entity.addComponent<PositionComponent>({ x: 0, y: 0 });
+entity.addComponent<VelocityComponent>({ vx: 10, vy: 5 });
+```
+
+#### Implementing Systems
+
+```typescript
+class MovementSystem implements ISystem {
+  update(entities: IEntity[], deltaTime: number): void {
+    // Query entities with both Position and Velocity components
+    const movableEntities = entities.filter(e => 
+      e.hasComponent(PositionComponent) && 
+      e.hasComponent(VelocityComponent)
+    );
+
+    movableEntities.forEach(entity => {
+      const pos = entity.getComponent<PositionComponent>(PositionComponent);
+      const vel = entity.getComponent<VelocityComponent>(VelocityComponent);
+      
+      if (pos && vel) {
+        // Frame-rate independent movement
+        pos.x += vel.vx * (deltaTime / 1000);
+        pos.y += vel.vy * (deltaTime / 1000);
+      }
+    });
+  }
+}
+```
+
+#### Integrating with Game Loop
+
+```typescript
+import { clock$ } from 'rgdk';
+
+const entityManager = new EntityManager();
+const movementSystem = new MovementSystem();
+
+clock$.subscribe((frame) => {
+  const entities = entityManager.getAllEntities();
+  movementSystem.update(entities, frame.deltaTime);
+});
+```
+
+### ECS Best Practices
+
+1. **Components are Data-Only**: Keep all logic in systems, not components
+2. **Single Responsibility**: Each system should handle one specific behavior
+3. **Efficient Queries**: Cache entity queries when possible to avoid filtering every frame
+4. **Immutability Consideration**: While ECS traditionally mutates component data, consider using Immer for complex state updates
+5. **System Order**: Define clear execution order for systems that depend on each other
+6. **Component Composition**: Prefer many small components over few large ones
+
+### Performance Guidelines
+
+- Use efficient queries to filter entities by component type
+- Avoid creating/destroying entities during gameplay (use object pooling)
+- Batch similar operations within systems
+- Profile entity counts and system execution times
+- Consider using sparse sets or other efficient data structures for large entity counts
+
 ## Special Considerations
 
 ### Performance
