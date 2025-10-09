@@ -17,6 +17,8 @@ npm install rgdk@latest
 - [x] **TypeScript Support** - Full TypeScript definitions and type safety
 - [x] **RxJS Observable Streams for Game Loop** - Frame-based game loop using RxJS observables with configurable FPS
 - [x] **Observable Streams for User Input** - Reactive event handling for keyboard, mouse, and touch inputs
+- [x] **Asset Management System** - Load and cache images, audio, and JSON data with observable progress tracking
+- [x] **Canvas Renderer** - Built-in canvas-based rendering with sprite support
 - [ ] **Render Engine Abstraction** - PIXI.js integration (planned)
 - [ ] **Physics Engine Abstraction** - P2 integration (planned)
 - [ ] **Entity Component System (ECS)** - Game object management system (under consideration)
@@ -95,14 +97,88 @@ clock$.pipe(
 
 - **`FPS`** - Frame rate constant (default: 60)
 
+### Asset Management
+
+- **`assetLoader`** - Singleton instance of AssetLoader
+  - `load(manifest: AssetManifest): Observable<LoadProgress>` - Load assets and track progress
+  - `get<T>(key: string): T | null` - Get a loaded asset from cache
+  - `clear(): void` - Clear all cached assets
+
+Example:
+```typescript
+import { assetLoader } from 'rgdk';
+
+const manifest = {
+  images: {
+    'player': './assets/player.png',
+    'enemy': './assets/enemy.png'
+  },
+  audio: {
+    'bgm': './assets/music.mp3'
+  },
+  data: {
+    'config': './assets/config.json'
+  }
+};
+
+assetLoader.load(manifest).subscribe({
+  next: (progress) => {
+    console.log(`Loading: ${progress.percentage}%`);
+  },
+  complete: () => {
+    const playerImage = assetLoader.get<HTMLImageElement>('player');
+    console.log('All assets loaded!');
+  }
+});
+```
+
+### Canvas Renderer
+
+- **`CanvasRenderer`** - Canvas-based renderer class
+  - `init(config: RendererConfig): void` - Initialize the renderer
+  - `createSprite(config: SpriteConfig): ISprite` - Create a sprite
+  - `render(): void` - Render all sprites
+  - `getView(): HTMLCanvasElement` - Get the canvas element
+  - `resize(width: number, height: number): void` - Resize the canvas
+  - `destroy(): void` - Clean up and destroy the renderer
+
+- **`canvasRenderer`** - Singleton instance of CanvasRenderer
+
+Example:
+```typescript
+import { canvasRenderer, clock$ } from 'rgdk';
+
+// Initialize renderer
+canvasRenderer.init({
+  width: 800,
+  height: 600,
+  backgroundColor: 0x1099bb
+});
+
+// Create a sprite (after loading assets)
+const sprite = canvasRenderer.createSprite({
+  texture: playerImage,
+  x: 100,
+  y: 100,
+  anchor: { x: 0.5, y: 0.5 }
+});
+
+// Update and render in game loop
+clock$.subscribe(() => {
+  sprite.rotation += 0.01;
+  canvasRenderer.render();
+});
+```
+
 ## POC Requirements
 
 To complete the proof of concept, the following requirements need to be addressed:
 
 ### 1. Core Rendering System
-- [ ] Integrate PIXI.js as the rendering engine
-- [ ] Create abstraction layer for rendering operations
-- [ ] Support sprite rendering, animations, and transformations
+- [x] Create canvas-based rendering abstraction
+- [x] Support sprite rendering and transformations
+- [x] Integrate rendering with game loop
+- [ ] Integrate PIXI.js as the rendering engine (optional)
 - [ ] Implement camera/viewport management
 - [ ] Add scene graph management
 
@@ -121,18 +197,24 @@ To complete the proof of concept, the following requirements need to be addresse
 - [ ] Integrate ECS with game loop observable
 
 ### 4. Asset Management
-- [ ] Create asset loader for images, audio, and data files
-- [ ] Implement asset caching and preloading
-- [ ] Add progress tracking for asset loading
+- [x] Create asset loader for images, audio, and data files
+- [x] Implement asset caching and preloading
+- [x] Add progress tracking for asset loading
+- [x] Support for images and audio files
+- [x] Error handling for failed loads
 - [ ] Support for sprite sheets and texture atlases
 
 ### 5. Example Games
-- [ ] Create a simple "Hello World" example
+- [x] Create a simple "Hello World" example
+- [x] Build a simple clicker demo (mouse input + rendering)
+- [x] Build a movement demo (keyboard input + rendering)
 - [ ] Build a basic platformer demo
 - [ ] Build a simple particle system demo
 - [ ] Document example code with best practices
 
 ### 6. Documentation
+- [x] Add API documentation for new modules
+- [x] Update README with usage examples
 - [ ] Complete API documentation
 - [ ] Add architecture guide
 - [ ] Create tutorials for common game patterns
