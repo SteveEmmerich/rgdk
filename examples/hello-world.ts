@@ -3,11 +3,11 @@
  * 
  * This example demonstrates:
  * - Creating a canvas renderer
- * - Drawing text on the canvas
+ * - Using TextureUtils to create text sprites
  * - Basic setup with RGDK
  */
 
-import { clock$, CanvasRenderer } from 'rgdk';
+import { clock$, CanvasRenderer, TextureUtils } from 'rgdk';
 
 // Create and initialize the renderer
 const renderer = new CanvasRenderer();
@@ -17,23 +17,23 @@ renderer.init({
   backgroundColor: 0x1099bb,
 });
 
-// Get canvas context for drawing text
-const canvas = renderer.getView();
-const ctx = canvas.getContext('2d')!;
-
-// Set up text properties
-ctx.font = '48px Arial';
-ctx.fillStyle = 'white';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
+// Create a text texture and sprite
+const textTexture = TextureUtils.createText('Hello, RGDK!', 48, '#ffffff');
+const textSprite = renderer.createSprite({
+  texture: textTexture,
+  x: 400,
+  y: 300,
+  anchor: { x: 0.5, y: 0.5 }
+});
 
 // Subscribe to game loop
 clock$.subscribe(() => {
+  // Add a subtle floating animation
+  textSprite.y = 300 + Math.sin(Date.now() / 1000) * 10;
+  
   // Render the scene
   renderer.render();
-  
-  // Draw "Hello, RGDK!" text
-  ctx.fillText('Hello, RGDK!', canvas.width / 2, canvas.height / 2);
 });
 
 console.log('Hello World example running! Check the canvas.');
+

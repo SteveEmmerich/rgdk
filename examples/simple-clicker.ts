@@ -4,12 +4,11 @@
  * This example demonstrates:
  * - Handling mouse click events
  * - Creating sprites dynamically
- * - Asset loading and management
+ * - Using TextureUtils for creating textures
  * - Rendering sprites
  */
 
-import { clock$, click$, CanvasRenderer, assetLoader, AssetManifest } from 'rgdk';
-import { withLatestFrom } from 'rxjs/operators';
+import { clock$, click$, CanvasRenderer, TextureUtils } from 'rgdk';
 
 // Create and initialize the renderer
 const renderer = new CanvasRenderer();
@@ -22,19 +21,9 @@ renderer.init({
 const canvas = renderer.getView();
 const ctx = canvas.getContext('2d')!;
 
-// Simple colored square as a sprite texture
-function createColoredSquare(size: number, color: string): HTMLCanvasElement {
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = size;
-  tempCanvas.height = size;
-  const tempCtx = tempCanvas.getContext('2d')!;
-  tempCtx.fillStyle = color;
-  tempCtx.fillRect(0, 0, size, size);
-  return tempCanvas;
-}
-
-// Create a simple sprite texture
-const squareTexture = createColoredSquare(50, '#00ff00');
+// Create sprite textures with different colors using TextureUtils
+const colors = ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+let colorIndex = 0;
 
 // Instructions
 ctx.font = '20px Arial';
@@ -42,15 +31,17 @@ ctx.fillStyle = 'white';
 ctx.textAlign = 'center';
 
 // Handle clicks to spawn sprites
-click$.pipe(
-  withLatestFrom(clock$)
-).subscribe(([clickEvent, frame]) => {
+click$.subscribe((clickEvent: Event) => {
   const mouseEvent = clickEvent as MouseEvent;
   const rect = canvas.getBoundingClientRect();
   const x = mouseEvent.clientX - rect.left;
   const y = mouseEvent.clientY - rect.top;
   
-  // Create a sprite at click position
+  // Create a sprite at click position using TextureUtils
+  const color = colors[colorIndex % colors.length];
+  colorIndex++;
+  const squareTexture = TextureUtils.createRect(50, 50, color);
+  
   const sprite = renderer.createSprite({
     texture: squareTexture,
     x: x,
@@ -61,7 +52,7 @@ click$.pipe(
   // Add some rotation for visual interest
   sprite.rotation = Math.random() * Math.PI * 2;
   
-  console.log(`Sprite created at (${x}, ${y})`);
+  console.log(`Sprite created at (${x}, ${y}) with color ${color}`);
 });
 
 // Game loop - render continuously
@@ -73,3 +64,4 @@ clock$.subscribe(() => {
 });
 
 console.log('Clicker example running! Click on the canvas to spawn sprites.');
+

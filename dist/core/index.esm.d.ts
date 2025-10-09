@@ -139,5 +139,65 @@ declare class CanvasRenderer implements IRenderer {
 }
 // Export a singleton instance
 declare const canvasRenderer: CanvasRenderer;
-export { FPS, default as FrameInterface, default as clock$, click$, keydown$, keyup$, keypressed$, touch$, AssetManifest, LoadProgress, IAssetLoader, AssetLoader, assetLoader, RendererConfig, SpriteConfig, ISprite, IRenderer, CanvasRenderer, canvasRenderer };
+declare class SpriteManager {
+    private sprites;
+    /**
+     * Add a sprite to the manager
+     */
+    add(sprite: ISprite): void;
+    /**
+     * Remove a sprite from the manager
+     */
+    remove(sprite: ISprite): void;
+    /**
+     * Remove and destroy a sprite
+     */
+    destroy(sprite: ISprite): void;
+    /**
+     * Apply a function to all sprites
+     */
+    forEach(fn: (sprite: ISprite) => void): void;
+    /**
+     * Filter sprites
+     */
+    filter(predicate: (sprite: ISprite) => boolean): ISprite[];
+    /**
+     * Destroy all sprites
+     */
+    destroyAll(): void;
+    /**
+     * Get the number of sprites
+     */
+    get count(): number;
+    /**
+     * Get all sprites as an array
+     */
+    getAll(): ISprite[];
+}
+/**
+ * Texture utilities for creating simple textures programmatically
+ */
+declare class TextureUtils {
+    /**
+     * Create a solid colored rectangle texture
+     */
+    static createRect(width: number, height: number, color: string): HTMLCanvasElement;
+    /**
+     * Create a circle texture
+     */
+    static createCircle(radius: number, color: string, filled?: boolean): HTMLCanvasElement;
+    /**
+     * Create a gradient circle texture (useful for particles)
+     */
+    static createGradientCircle(radius: number, innerColor: string, outerColor?: string): HTMLCanvasElement;
+    /**
+     * Create a text texture
+     */
+    static createText(text: string, fontSize?: number, color?: string, fontFamily?: string): HTMLCanvasElement;
+    /**
+     * Convert a color number (0xRRGGBB) to CSS color string
+     */
+    static colorToString(color: number): string;
+}
+export { FPS, default as FrameInterface, default as clock$, click$, keydown$, keyup$, keypressed$, touch$, AssetManifest, LoadProgress, IAssetLoader, AssetLoader, assetLoader, RendererConfig, SpriteConfig, ISprite, IRenderer, CanvasRenderer, canvasRenderer, SpriteManager, TextureUtils };
 //# sourceMappingURL=index.esm.d.ts.map

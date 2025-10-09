@@ -352,9 +352,170 @@ var CanvasRenderer = /** @class */ (function () {
 // Export a singleton instance
 var canvasRenderer = new CanvasRenderer();
 
+/**
+ * Sprite Manager utility
+ * Helps manage sprite lifecycle and batch operations
+ */
+var SpriteManager = /** @class */ (function () {
+    function SpriteManager() {
+        this.sprites = new Set();
+    }
+    /**
+     * Add a sprite to the manager
+     */
+    SpriteManager.prototype.add = function (sprite) {
+        this.sprites.add(sprite);
+    };
+    /**
+     * Remove a sprite from the manager
+     */
+    SpriteManager.prototype.remove = function (sprite) {
+        this.sprites.delete(sprite);
+    };
+    /**
+     * Remove and destroy a sprite
+     */
+    SpriteManager.prototype.destroy = function (sprite) {
+        this.sprites.delete(sprite);
+        sprite.destroy();
+    };
+    /**
+     * Apply a function to all sprites
+     */
+    SpriteManager.prototype.forEach = function (fn) {
+        this.sprites.forEach(fn);
+    };
+    /**
+     * Filter sprites
+     */
+    SpriteManager.prototype.filter = function (predicate) {
+        var result = [];
+        this.sprites.forEach(function (sprite) {
+            if (predicate(sprite)) {
+                result.push(sprite);
+            }
+        });
+        return result;
+    };
+    /**
+     * Destroy all sprites
+     */
+    SpriteManager.prototype.destroyAll = function () {
+        this.sprites.forEach(function (sprite) { return sprite.destroy(); });
+        this.sprites.clear();
+    };
+    Object.defineProperty(SpriteManager.prototype, "count", {
+        /**
+         * Get the number of sprites
+         */
+        get: function () {
+            return this.sprites.size;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Get all sprites as an array
+     */
+    SpriteManager.prototype.getAll = function () {
+        return Array.from(this.sprites);
+    };
+    return SpriteManager;
+}());
+
+/**
+ * Texture utilities for creating simple textures programmatically
+ */
+var TextureUtils = /** @class */ (function () {
+    function TextureUtils() {
+    }
+    /**
+     * Create a solid colored rectangle texture
+     */
+    TextureUtils.createRect = function (width, height, color) {
+        var canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, width, height);
+        return canvas;
+    };
+    /**
+     * Create a circle texture
+     */
+    TextureUtils.createCircle = function (radius, color, filled) {
+        if (filled === void 0) { filled = true; }
+        var size = radius * 2;
+        var canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+        if (filled) {
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        else {
+            ctx.strokeStyle = color;
+            ctx.stroke();
+        }
+        return canvas;
+    };
+    /**
+     * Create a gradient circle texture (useful for particles)
+     */
+    TextureUtils.createGradientCircle = function (radius, innerColor, outerColor) {
+        if (outerColor === void 0) { outerColor = 'transparent'; }
+        var size = radius * 2;
+        var canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        var gradient = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+        gradient.addColorStop(0, innerColor);
+        gradient.addColorStop(1, outerColor);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+        ctx.fill();
+        return canvas;
+    };
+    /**
+     * Create a text texture
+     */
+    TextureUtils.createText = function (text, fontSize, color, fontFamily) {
+        if (fontSize === void 0) { fontSize = 24; }
+        if (color === void 0) { color = 'white'; }
+        if (fontFamily === void 0) { fontFamily = 'Arial'; }
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        ctx.font = fontSize + "px " + fontFamily;
+        var metrics = ctx.measureText(text);
+        canvas.width = Math.ceil(metrics.width);
+        canvas.height = fontSize * 1.5;
+        // Redraw with proper size
+        ctx.font = fontSize + "px " + fontFamily;
+        ctx.fillStyle = color;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 0, canvas.height / 2);
+        return canvas;
+    };
+    /**
+     * Convert a color number (0xRRGGBB) to CSS color string
+     */
+    TextureUtils.colorToString = function (color) {
+        return '#' + color.toString(16).padStart(6, '0');
+    };
+    return TextureUtils;
+}());
+
 exports.AssetLoader = AssetLoader;
 exports.CanvasRenderer = CanvasRenderer;
 exports.FPS = FPS;
+exports.SpriteManager = SpriteManager;
+exports.TextureUtils = TextureUtils;
 exports.assetLoader = assetLoader;
 exports.canvasRenderer = canvasRenderer;
 exports.click$ = click$;

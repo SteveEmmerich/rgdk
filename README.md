@@ -170,6 +170,39 @@ clock$.subscribe(() => {
 });
 ```
 
+### Utilities
+
+- **`SpriteManager`** - Utility class for managing sprite lifecycle
+  - `add(sprite: ISprite): void` - Add a sprite to the manager
+  - `remove(sprite: ISprite): void` - Remove a sprite
+  - `destroy(sprite: ISprite): void` - Remove and destroy a sprite
+  - `forEach(fn: (sprite: ISprite) => void): void` - Apply function to all sprites
+  - `filter(predicate): ISprite[]` - Filter sprites
+  - `destroyAll(): void` - Destroy all managed sprites
+  - `count: number` - Get sprite count
+
+- **`TextureUtils`** - Utility class for creating textures programmatically
+  - `createRect(width, height, color): HTMLCanvasElement` - Create a solid rectangle
+  - `createCircle(radius, color, filled?): HTMLCanvasElement` - Create a circle
+  - `createGradientCircle(radius, innerColor, outerColor?): HTMLCanvasElement` - Create gradient circle
+  - `createText(text, fontSize?, color?, fontFamily?): HTMLCanvasElement` - Create text texture
+  - `colorToString(color: number): string` - Convert color number to CSS string
+
+Example:
+```typescript
+import { TextureUtils, canvasRenderer } from 'rgdk';
+
+// Create textures without external images
+const circleTexture = TextureUtils.createCircle(25, '#ff0000');
+const textTexture = TextureUtils.createText('Hello!', 32, '#ffffff');
+
+const sprite = canvasRenderer.createSprite({
+  texture: circleTexture,
+  x: 100,
+  y: 100
+});
+```
+
 ## POC Requirements
 
 To complete the proof of concept, the following requirements need to be addressed:

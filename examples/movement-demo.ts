@@ -8,7 +8,7 @@
  * - Reactive input state management
  */
 
-import { clock$, keydown$, keyup$, CanvasRenderer } from 'rgdk';
+import { clock$, keydown$, keyup$, CanvasRenderer, TextureUtils } from 'rgdk';
 import { scan } from 'rxjs/operators';
 
 // Create and initialize the renderer

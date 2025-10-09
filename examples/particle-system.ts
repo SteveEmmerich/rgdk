@@ -8,7 +8,7 @@
  * - Click to spawn particle bursts
  */
 
-import { clock$, click$, CanvasRenderer } from 'rgdk';
+import { clock$, click$, CanvasRenderer, TextureUtils } from 'rgdk';
 
 // Particle class
 class Particle {
@@ -49,27 +49,7 @@ renderer.init({
 const canvas = renderer.getView();
 const ctx = canvas.getContext('2d')!;
 
-// Create a simple particle texture
-function createParticleTexture(size: number, color: string): HTMLCanvasElement {
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = size;
-  tempCanvas.height = size;
-  const tempCtx = tempCanvas.getContext('2d')!;
-  
-  // Draw a circle
-  const gradient = tempCtx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, color);
-  gradient.addColorStop(1, 'transparent');
-  
-  tempCtx.fillStyle = gradient;
-  tempCtx.beginPath();
-  tempCtx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-  tempCtx.fill();
-  
-  return tempCanvas;
-}
-
-const particleTexture = createParticleTexture(20, '#ff8800');
+const particleTexture = TextureUtils.createGradientCircle(10, '#ff8800');
 const particles: Particle[] = [];
 
 // Handle clicks to spawn particle bursts
@@ -90,7 +70,7 @@ click$.subscribe((event: Event) => {
     const vy = Math.sin(angle) * speed - 200; // Add upward velocity
     
     const color = colors[Math.floor(Math.random() * colors.length)];
-    const texture = createParticleTexture(15, color);
+    const texture = TextureUtils.createGradientCircle(8, color);
     
     const sprite = renderer.createSprite({
       texture: texture,
