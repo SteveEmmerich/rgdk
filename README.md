@@ -320,18 +320,213 @@ MIT
 
 ## Roadmap
 
-### Short Term (Current POC)
-- Complete rendering engine integration
-- Add basic physics support
-- Create initial example games
+RGDK aims to be a modern, competitive, and reactive-friendly game development kit. The following roadmap outlines essential features and design patterns that will make RGDK a powerful framework for reactive game development.
 
-### Medium Term
-- Implement ECS architecture
-- Add comprehensive test coverage
-- Improve documentation and tutorials
+### Essential Features
 
-### Long Term
-- WebGL/WebGPU rendering support
-- Advanced physics features
-- Multi-platform support (desktop via Electron)
-- Plugin system for extensibility
+#### Core Systems
+- **Game Loop & Timing** ✅
+  - [x] Central frame update system with `animationFrameScheduler`
+  - [x] Delta time calculation for frame-rate independent behavior
+  - [x] Configurable fixed/variable time step (60 FPS default)
+
+- **Rendering**
+  - [x] Canvas-based rendering with sprite support
+  - [ ] WebGL rendering option
+  - [ ] PIXI.js integration for advanced 2D rendering
+  - [ ] Three.js/Babylon.js integration for 3D (future consideration)
+  - [ ] Camera/viewport management
+  - [ ] Scene graph management
+  - [ ] Layer/z-index rendering
+
+- **Input Handling** ✅
+  - [x] Keyboard, mouse, and touch events as observable streams
+  - [x] Gamepad support via observable streams
+  - [ ] Input mapping and remapping system
+  - [ ] Gesture recognition for touch devices
+
+- **Asset Management** ✅
+  - [x] Loading and caching for images, sounds, and data files
+  - [x] Observable-based progress tracking
+  - [x] Error handling for failed loads
+  - [ ] Support for sprite sheets and texture atlases
+  - [ ] Asset preloading and lazy loading strategies
+  - [ ] Asset versioning and cache invalidation
+
+#### Advanced Systems
+- **Entity Component System (ECS)**
+  - [ ] Lightweight ECS architecture compatible with reactive patterns
+  - [ ] Entity manager for creating/destroying entities
+  - [ ] Component registry with type-safe definitions
+  - [ ] System execution pipeline integrated with game loop
+  - [ ] Query system for entities with specific components
+  - [ ] Observable component updates
+
+- **Scene Management**
+  - [ ] Scene switching and stacking system
+  - [ ] Scene transitions and effects
+  - [ ] State management between scenes
+  - [ ] Observable scene lifecycle events
+
+- **Physics & Animation**
+  - [ ] Physics engine abstraction (P2.js, Matter.js)
+  - [ ] Rigid body dynamics and collision detection
+  - [ ] Physics debug rendering
+  - [ ] Animation system with timeline/tweening
+  - [ ] Sprite sheet animations
+  - [ ] State-based animation transitions
+  - [ ] Particle system support
+
+- **Audio**
+  - [ ] Audio loading and playback via Web Audio API
+  - [ ] Sound mixing and volume control
+  - [ ] Spatial audio support
+  - [ ] Observable audio events (play, pause, end)
+
+- **UI/HUD**
+  - [ ] Reactive UI component system
+  - [ ] Menus, dialogs, and overlays
+  - [ ] Scoreboards and health bars
+  - [ ] Event-driven UI updates via observables
+  - [ ] UI state management
+
+#### Developer Experience
+- **Utilities & Tools**
+  - [ ] Debugging tools (entity inspector, performance monitor)
+  - [ ] Hot reload support for development
+  - [ ] Event log and visualization
+  - [ ] Testing framework for game logic
+  - [ ] Replay and time-travel debugging
+
+- **Developer Tooling**
+  - [ ] CLI for project scaffolding
+  - [ ] Starter templates and boilerplates
+  - [ ] Build and deployment commands
+  - [ ] Documentation generator
+  - [ ] Code examples and tutorials
+
+### Design Patterns & Architecture
+
+RGDK embraces reactive programming and provides first-class support for the following design patterns:
+
+#### Reactive Patterns
+- **Observable Streams** ✅
+  - [x] Game loop clock as observable
+  - [x] Input events as observable streams
+  - [x] Asset loading progress as observables
+  - [ ] Game state changes as observables
+  - [ ] Networking events as observables
+  - [ ] Physics/collision events as observables
+
+- **State Machines**
+  - [ ] Game state machine (menu, playing, paused, game over)
+  - [ ] Entity behavior state machines
+  - [ ] UI flow state machines
+  - [ ] Observable state transitions
+  - [ ] Hierarchical state machines (HSM)
+
+- **Event Bus/Signal System**
+  - [ ] Publish/subscribe pattern for game events
+  - [ ] Collision and trigger events
+  - [ ] Achievement and scoring events
+  - [ ] Cross-system communication via events
+  - [ ] Type-safe event definitions
+
+- **Command Pattern**
+  - [ ] Decouple user actions from game logic
+  - [ ] Commands as observable stream events
+  - [ ] Command queue and execution
+  - [ ] Undo/redo support via command history
+
+#### Component & Entity Patterns
+- **Selector/Query Pattern**
+  - [ ] Query entities by component composition
+  - [ ] Reactive entity queries that update automatically
+  - [ ] Filtered entity collections
+  - [ ] Component-based entity selection
+
+- **Component-Based Architecture**
+  - [ ] Entities composed from reusable components
+  - [ ] Component lifecycle management
+  - [ ] Component communication via messages
+  - [ ] Data-driven entity definitions
+
+- **Observer + ECS Integration**
+  - [ ] ECS system updates triggered by observables
+  - [ ] Component changes as observable streams
+  - [ ] Reactive system dependencies
+  - [ ] Automatic system execution ordering
+
+#### Advanced Patterns
+- **Replay/Recordable Streams**
+  - [ ] Record game input streams
+  - [ ] Replay recorded sessions
+  - [ ] Time travel debugging
+  - [ ] Deterministic replay system
+  - [ ] Save state and rewind functionality
+
+- **Scheduler/Timeline**
+  - [ ] Orchestrate timed effects as RxJS streams
+  - [ ] Animation timelines
+  - [ ] Cutscene sequencing
+  - [ ] Scheduled game events
+  - [ ] Parallel and sequential effect composition
+
+- **Strategy & Factory Patterns**
+  - [ ] Pluggable behavior strategies
+  - [ ] Factory methods for entity/component creation
+  - [ ] Dependency injection for systems
+  - [ ] Configuration-based entity instantiation
+
+### Development Timeline
+
+#### Phase 1: Foundation (Current - Q1 2024)
+- ✅ Core game loop and timing
+- ✅ Input system with observable streams
+- ✅ Basic asset management
+- ✅ Canvas renderer
+- [ ] Complete rendering engine integration (PIXI.js)
+- [ ] Basic physics support (P2.js)
+- [ ] Initial example games
+
+#### Phase 2: Core Features (Q2 2024)
+- [ ] Entity Component System (ECS)
+- [ ] Scene management system
+- [ ] Animation and tweening system
+- [ ] Audio system integration
+- [ ] Advanced input mapping
+- [ ] Comprehensive test coverage
+- [ ] Expanded documentation and tutorials
+
+#### Phase 3: Advanced Features (Q3 2024)
+- [ ] State machine implementation
+- [ ] Event bus and signal system
+- [ ] Command pattern support
+- [ ] UI/HUD component system
+- [ ] Physics debug tools
+- [ ] Performance profiling tools
+
+#### Phase 4: Developer Experience (Q4 2024)
+- [ ] CLI tool for project scaffolding
+- [ ] Hot reload and debugging tools
+- [ ] Replay/recording system
+- [ ] Testing framework
+- [ ] Plugin system for extensibility
+- [ ] Advanced examples and tutorials
+
+#### Phase 5: Platform & Ecosystem (2025)
+- [ ] WebGL/WebGPU rendering support
+- [ ] 3D rendering integration (Three.js/Babylon.js)
+- [ ] Multi-platform support (desktop via Electron)
+- [ ] Mobile optimizations
+- [ ] Cloud save and multiplayer patterns
+- [ ] Marketplace for components and templates
+
+### Contributing to the Roadmap
+
+We welcome community input on the roadmap! If you have suggestions for features or patterns that would benefit RGDK, please:
+- Open an issue to discuss new features
+- Submit PRs for roadmap items you'd like to implement
+- Join discussions about architecture and design decisions
+
+**Rationale:** These features and patterns will enable RGDK to fully leverage RxJS/reactive programming, making it modular, extensible, and attractive to developers seeking a modern approach to game development. They align with industry standards while showcasing RGDK's unique reactive strengths.
