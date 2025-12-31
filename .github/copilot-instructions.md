@@ -136,12 +136,13 @@ clock$.subscribe((frame: FrameInterface) => {
 ### Input Handling
 
 ```typescript
-import { click$, keydown$, keyup$, keypressed$ } from 'rgdk';
-import { touchstart$, touchmove$, touchend$, touchcancel$ } from 'rgdk';
+import { click$, keydown$, keyup$, keypressed$, touch$ } from 'rgdk';
 
 // All input events are RxJS observables
 click$.subscribe((event: MouseEvent) => { /* ... */ });
 keydown$.subscribe((event: KeyboardEvent) => { /* ... */ });
+// touch$ combines touchstart, touchmove, touchcancel, and touchend events
+touch$.subscribe(([start, move, cancel, end]) => { /* ... */ });
 ```
 
 ## Current POC Status
@@ -154,7 +155,7 @@ keydown$.subscribe((event: KeyboardEvent) => { /* ... */ });
 
 ### In Progress / Planned 📋
 - **HIGH Priority**: PIXI.js rendering engine integration
-- **HIGH Priority**: Physics engine integration (P2)
+- **MEDIUM Priority**: Physics engine integration (P2)
 - **HIGH Priority**: Example games (Hello World, Clicker, Movement, Particle System)
 - **HIGH Priority**: Complete API documentation
 - **MEDIUM Priority**: Entity Component System (ECS) architecture
@@ -178,6 +179,14 @@ RGDK is planned to include a lightweight ECS architecture that integrates seamle
 ### Core Interfaces
 
 ```typescript
+// Component - data containers (no logic)
+interface IComponent {
+  // Components are pure data structures
+}
+
+// ComponentType - used to identify component types
+type ComponentType<T extends IComponent> = new (...args: any[]) => T;
+
 // Entity - container for components
 interface IEntity {
   id: string;
@@ -191,11 +200,6 @@ interface IEntity {
 interface ISystem {
   update(entities: IEntity[], deltaTime: number): void;
 }
-
-// Component - data containers (no logic)
-interface IComponent {
-  // Components are pure data structures
-}
 ```
 
 ### ECS Usage Patterns
@@ -203,21 +207,19 @@ interface IComponent {
 #### Creating Entities and Components
 
 ```typescript
-// Define a component
-interface PositionComponent extends IComponent {
-  x: number;
-  y: number;
+// Define components as classes
+class PositionComponent implements IComponent {
+  constructor(public x: number, public y: number) {}
 }
 
-interface VelocityComponent extends IComponent {
-  vx: number;
-  vy: number;
+class VelocityComponent implements IComponent {
+  constructor(public vx: number, public vy: number) {}
 }
 
 // Create an entity
 const entity = entityManager.createEntity();
-entity.addComponent<PositionComponent>({ x: 0, y: 0 });
-entity.addComponent<VelocityComponent>({ vx: 10, vy: 5 });
+entity.addComponent(new PositionComponent(0, 0));
+entity.addComponent(new VelocityComponent(10, 5));
 ```
 
 #### Implementing Systems
@@ -232,11 +234,13 @@ class MovementSystem implements ISystem {
     );
 
     movableEntities.forEach(entity => {
-      const pos = entity.getComponent<PositionComponent>(PositionComponent);
-      const vel = entity.getComponent<VelocityComponent>(VelocityComponent);
+      const pos = entity.getComponent(PositionComponent);
+      const vel = entity.getComponent(VelocityComponent);
       
       if (pos && vel) {
         // Frame-rate independent movement
+        // Note: ECS traditionally uses mutation for performance
+        // For complex state, consider using Immer (see line 267)
         pos.x += vel.vx * (deltaTime / 1000);
         pos.y += vel.vy * (deltaTime / 1000);
       }
