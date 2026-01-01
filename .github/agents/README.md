@@ -96,7 +96,7 @@ rgdk/
 - Verify tsup.config.ts configuration
 - Ensure examples are excluded from TypeScript compilation
 - Check import statements match library export patterns
-- For ES5 target, @swc/core is required
+- For ES5 target, @swc/core is required (tsup automatically uses it for downleveling)
 
 ## Performance Targets
 
