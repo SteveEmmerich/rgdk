@@ -19,9 +19,9 @@ npm install rgdk@latest
 - [x] **Observable Streams for User Input** - Reactive event handling for keyboard, mouse, and touch inputs
 - [x] **Asset Management System** - Load and cache images, audio, and JSON data with observable progress tracking
 - [x] **Canvas Renderer** - Built-in canvas-based rendering with sprite support
+- [x] **Entity Component System (ECS)** - Lightweight, reactive ECS architecture for game object management
 - [ ] **Render Engine Abstraction** - PIXI.js integration (planned)
 - [ ] **Physics Engine Abstraction** - P2 integration (planned)
-- [ ] **Entity Component System (ECS)** - Game object management system (under consideration)
 
 ## Usage
 
@@ -203,6 +203,63 @@ const sprite = canvasRenderer.createSprite({
 });
 ```
 
+### Entity Component System (ECS)
+
+RGDK includes a lightweight ECS architecture that integrates seamlessly with reactive programming patterns.
+
+```typescript
+import { EntityManager, SystemManager, System, IComponent, IEntity, clock$ } from 'rgdk';
+
+// Define components (pure data)
+class PositionComponent implements IComponent {
+  constructor(public x: number, public y: number) {}
+}
+
+class VelocityComponent implements IComponent {
+  constructor(public vx: number, public vy: number) {}
+}
+
+// Define systems (game logic)
+class MovementSystem extends System {
+  constructor() {
+    super();
+    // Specify required components
+    this.requiredComponents = [PositionComponent, VelocityComponent];
+  }
+
+  protected process(entities: IEntity[], deltaTime: number): void {
+    entities.forEach(entity => {
+      const pos = entity.getComponent(PositionComponent);
+      const vel = entity.getComponent(VelocityComponent);
+      
+      if (pos && vel) {
+        // Frame-rate independent movement
+        pos.x += vel.vx * (deltaTime / 1000);
+        pos.y += vel.vy * (deltaTime / 1000);
+      }
+    });
+  }
+}
+
+// Create managers
+const entityManager = new EntityManager();
+const systemManager = new SystemManager();
+
+// Create entities
+const entity = entityManager.createEntity();
+entity.addComponent(new PositionComponent(0, 0));
+entity.addComponent(new VelocityComponent(100, 50));
+
+// Register systems
+systemManager.registerSystem(new MovementSystem());
+
+// Integrate with game loop
+clock$.subscribe((frame) => {
+  const entities = entityManager.getAllEntities();
+  systemManager.update(entities, frame.deltaTime);
+});
+```
+
 ## POC Requirements
 
 To complete the proof of concept, the following requirements need to be addressed:
@@ -223,11 +280,11 @@ To complete the proof of concept, the following requirements need to be addresse
 - [ ] Add physics debug rendering
 
 ### 3. Entity Component System (ECS)
-- [ ] Design ECS architecture compatible with reactive patterns
-- [ ] Implement Entity manager
-- [ ] Implement Component registry
-- [ ] Implement System execution pipeline
-- [ ] Integrate ECS with game loop observable
+- [x] Design ECS architecture compatible with reactive patterns
+- [x] Implement Entity manager
+- [x] Implement Component registry
+- [x] Implement System execution pipeline
+- [x] Integrate ECS with game loop observable
 
 ### 4. Asset Management
 - [x] Create asset loader for images, audio, and data files
@@ -354,12 +411,12 @@ RGDK aims to be a modern, competitive, and reactive-friendly game development ki
   - [ ] Asset versioning and cache invalidation
 
 #### Advanced Systems
-- **Entity Component System (ECS)**
-  - [ ] Lightweight ECS architecture compatible with reactive patterns
-  - [ ] Entity manager for creating/destroying entities
-  - [ ] Component registry with type-safe definitions
-  - [ ] System execution pipeline integrated with game loop
-  - [ ] Query system for entities with specific components
+- **Entity Component System (ECS)** ✅
+  - [x] Lightweight ECS architecture compatible with reactive patterns
+  - [x] Entity manager for creating/destroying entities
+  - [x] Component registry with type-safe definitions
+  - [x] System execution pipeline integrated with game loop
+  - [x] Query system for entities with specific components
   - [ ] Observable component updates
 
 - **Scene Management**
