@@ -5,6 +5,14 @@ import { readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
+// Shared TypeScript plugin configuration
+const tsPluginConfig = {
+  tsconfig: './tsconfig.json',
+  declaration: true,
+  declarationMap: false,
+  outDir: 'dist/core',
+};
+
 export default [
   {
     input: 'src/index.ts',
@@ -14,12 +22,7 @@ export default [
       format: 'umd',
     },
     plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: true,
-        declarationMap: false,
-        outDir: 'dist/core',
-      }),
+      typescript(tsPluginConfig),
       resolve(),
       commonjs(),
       
@@ -33,11 +36,6 @@ export default [
 
     { file: pkg.module, format: 'es' }
   ],
-  plugins: [typescript({
-    tsconfig: './tsconfig.json',
-    declaration: true,
-    declarationMap: false,
-    outDir: 'dist/core',
-  })],
+  plugins: [typescript(tsPluginConfig)],
 }
 ];
