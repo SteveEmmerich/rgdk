@@ -392,6 +392,12 @@ declare abstract class System implements ISystem {
 /**
  * SystemManager manages the execution of systems in the ECS architecture.
  * Systems are executed in the order they are registered.
+ *
+ * TODO: Future Enhancement - Multi-Phase Update Cycles
+ * When integrating physics (P2.js - see REQUIREMENTS.md §2), consider adding:
+ * - fixedUpdate(entities, fixedDeltaTime): For physics simulation with fixed timestep
+ * - lateUpdate(entities, deltaTime): For camera, UI, and post-processing logic
+ * This will ensure physics stability and proper update ordering without breaking existing code.
  */
 declare class SystemManager {
     private systems;
