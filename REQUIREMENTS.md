@@ -292,7 +292,8 @@ interface LoadProgress {
 
 ### Dev Dependencies
 - `typescript`: ^5.0.0 (upgraded from ^4.0.5)
-- `rollup`: ^4.0.0 (upgraded from ^2.33.1)
+- `tsup`: ^8.5.0 (build tool, replaced rollup)
+- `@swc/core`: ^1.10.0 (required for ES5 target)
 - `jest`: ^29.7.0 (upgraded from ^26.6.3)
 - `@types/*`: Latest versions for TypeScript support
 

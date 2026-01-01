@@ -8,25 +8,25 @@ RGDK is a reactive game development framework built on RxJS for creating browser
 
 ## Build System
 
-- **Build Tool**: Rollup v4.x
+- **Build Tool**: tsup v8.x (powered by esbuild)
 - **TypeScript**: v5.x
-- **Module System**: ESNext modules for Rollup, with outputs in UMD, CJS, and ESM formats
+- **Module System**: Generates CJS, ESM, and IIFE (browser) formats
 - **Build Command**: `npm run build`
 - **Dev Mode**: `npm run dev` (watch mode)
+- **Configuration**: `tsup.config.ts`
 
 ## Code Standards
 
 ### TypeScript
 - Use strict type checking
 - Target ES5 for maximum compatibility
-- Generate ES modules for Rollup
 - All public APIs must have TypeScript definitions
 - Avoid `any` type when possible
 - Use interfaces for public APIs
 
 ### Dependencies
 - **Core**: RxJS ^7.8.0, Immer ^10.1.0
-- **Dev**: TypeScript ^5.0.0, Rollup ^4.0.0, Jest ^29.7.0
+- **Dev**: TypeScript ^5.0.0, tsup ^8.5.0, @swc/core ^1.10.0, Jest ^29.7.0
 - Always check for security vulnerabilities before adding dependencies
 - Use peer dependencies for rendering (PIXI.js) and physics (P2) engines
 
@@ -92,10 +92,11 @@ rgdk/
 6. Add example in `examples/`
 
 #### Fixing Build Issues
-- Check tsconfig.json module setting (should be "esnext")
-- Verify rollup.config.js plugin configuration
+- Check tsconfig.json settings
+- Verify tsup.config.ts configuration
 - Ensure examples are excluded from TypeScript compilation
 - Check import statements match library export patterns
+- For ES5 target, @swc/core is required
 
 ## Performance Targets
 
