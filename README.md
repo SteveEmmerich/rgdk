@@ -2,7 +2,7 @@
 
 A reactive game development framework built on RxJS for creating browser-based games using reactive programming patterns.
 
-## Current Version: 0.0.2-2
+## Current Version: 0.0.3
 
 **Note:** Version 1.0.1 is deprecated. Please use the latest version.
 

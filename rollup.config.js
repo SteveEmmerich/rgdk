@@ -14,7 +14,12 @@ export default [
       format: 'umd',
     },
     plugins: [
-      typescript(),
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: true,
+        declarationMap: false,
+        outDir: 'dist/core',
+      }),
       resolve(),
       commonjs(),
       
@@ -28,6 +33,11 @@ export default [
 
     { file: pkg.module, format: 'es' }
   ],
-  plugins: [typescript()],
+  plugins: [typescript({
+    tsconfig: './tsconfig.json',
+    declaration: true,
+    declarationMap: false,
+    outDir: 'dist/core',
+  })],
 }
 ];
