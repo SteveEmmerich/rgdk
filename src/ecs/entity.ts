@@ -7,7 +7,7 @@ import { IComponent, ComponentType } from './component.interface';
  */
 export class Entity implements IEntity {
   private components: Map<ComponentType<any>, IComponent> = new Map();
-  public readonly id: string;
+  readonly id: string;
 
   /**
    * Create a new entity with a unique ID

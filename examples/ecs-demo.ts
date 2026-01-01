@@ -6,6 +6,9 @@
  * - Implementing systems with game logic
  * - Integrating ECS with the game loop
  * - Frame-rate independent movement
+ * 
+ * Note: This example imports from '../src/index' for development purposes.
+ * When using RGDK as a published package, import from 'rgdk' instead.
  */
 
 import {
