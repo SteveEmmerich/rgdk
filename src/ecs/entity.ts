@@ -19,10 +19,14 @@ export class Entity implements IEntity {
 
   /**
    * Add a component to this entity
+   * Note: Adding a component of the same type multiple times will replace the previous component.
    * @param component - The component instance to add
    */
   addComponent<T extends IComponent>(component: T): void {
     const type = component.constructor as ComponentType<T>;
+    if (this.components.has(type)) {
+      console.warn(`Entity ${this.id}: Replacing existing component of type ${type.name}`);
+    }
     this.components.set(type, component);
   }
 

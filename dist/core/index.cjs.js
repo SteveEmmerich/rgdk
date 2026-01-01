@@ -526,10 +526,14 @@ var Entity = /** @class */ (function () {
     }
     /**
      * Add a component to this entity
+     * Note: Adding a component of the same type multiple times will replace the previous component.
      * @param component - The component instance to add
      */
     Entity.prototype.addComponent = function (component) {
         var type = component.constructor;
+        if (this.components.has(type)) {
+            console.warn("Entity " + this.id + ": Replacing existing component of type " + type.name);
+        }
         this.components.set(type, component);
     };
     /**
@@ -573,6 +577,8 @@ var EntityManager = /** @class */ (function () {
     function EntityManager() {
         this.entities = new Map();
         this.nextEntityId = 0;
+        this.entitiesCache = null;
+        this.cacheInvalidated = true;
     }
     /**
      * Create a new entity and add it to the manager
@@ -582,15 +588,19 @@ var EntityManager = /** @class */ (function () {
         var id = this.generateEntityId();
         var entity = new Entity(id);
         this.entities.set(id, entity);
+        this.cacheInvalidated = true;
         return entity;
     };
     /**
      * Destroy an entity and remove it from the manager
+     * Note: Does not automatically clean up component resources (e.g., sprites).
+     * Users should manually clean up resources before destroying entities.
      * @param entity - The entity to destroy (can be entity object or ID string)
      */
     EntityManager.prototype.destroyEntity = function (entity) {
         var id = typeof entity === 'string' ? entity : entity.id;
         this.entities.delete(id);
+        this.cacheInvalidated = true;
     };
     /**
      * Get an entity by its ID
@@ -602,10 +612,16 @@ var EntityManager = /** @class */ (function () {
     };
     /**
      * Get all entities managed by this manager
+     * Note: This method caches the entity array for performance. The cache is
+     * automatically invalidated when entities are added or removed.
      * @returns Array of all entities
      */
     EntityManager.prototype.getAllEntities = function () {
-        return Array.from(this.entities.values());
+        if (this.cacheInvalidated) {
+            this.entitiesCache = Array.from(this.entities.values());
+            this.cacheInvalidated = false;
+        }
+        return this.entitiesCache;
     };
     /**
      * Query entities that have all specified components
@@ -617,9 +633,22 @@ var EntityManager = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             componentTypes[_i] = arguments[_i];
         }
-        return this.getAllEntities().filter(function (entity) {
-            return componentTypes.every(function (type) { return entity.hasComponent(type); });
-        });
+        var result = [];
+        var entities = Array.from(this.entities.values());
+        for (var i = 0; i < entities.length; i++) {
+            var entity = entities[i];
+            var matches = true;
+            for (var j = 0; j < componentTypes.length; j++) {
+                if (!entity.hasComponent(componentTypes[j])) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                result.push(entity);
+            }
+        }
+        return result;
     };
     Object.defineProperty(EntityManager.prototype, "count", {
         /**
@@ -637,6 +666,7 @@ var EntityManager = /** @class */ (function () {
      */
     EntityManager.prototype.destroyAll = function () {
         this.entities.clear();
+        this.cacheInvalidated = true;
     };
     /**
      * Generate a unique entity ID
@@ -675,13 +705,29 @@ var System = /** @class */ (function () {
      * @returns Entities that have all required components
      */
     System.prototype.filterEntities = function (entities) {
-        var _this = this;
+        // Fast path: no required components, no filtering needed
         if (this.requiredComponents.length === 0) {
             return entities;
         }
-        return entities.filter(function (entity) {
-            return _this.requiredComponents.every(function (type) { return entity.hasComponent(type); });
-        });
+        var required = this.requiredComponents;
+        var requiredLength = required.length;
+        var entityCount = entities.length;
+        var matchingEntities = [];
+        // Optimized loop: avoid creating closures and use indexed access
+        for (var i = 0; i < entityCount; i++) {
+            var entity = entities[i];
+            var matches = true;
+            for (var j = 0; j < requiredLength; j++) {
+                if (!entity.hasComponent(required[j])) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                matchingEntities.push(entity);
+            }
+        }
+        return matchingEntities;
     };
     /**
      * Enable this system

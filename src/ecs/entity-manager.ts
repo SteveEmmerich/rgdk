@@ -9,6 +9,8 @@ import { ComponentType } from './component.interface';
 export class EntityManager {
   private entities: Map<string, IEntity> = new Map();
   private nextEntityId: number = 0;
+  private entitiesCache: IEntity[] | null = null;
+  private cacheInvalidated: boolean = true;
 
   /**
    * Create a new entity and add it to the manager
@@ -18,16 +20,20 @@ export class EntityManager {
     const id = this.generateEntityId();
     const entity = new Entity(id);
     this.entities.set(id, entity);
+    this.cacheInvalidated = true;
     return entity;
   }
 
   /**
    * Destroy an entity and remove it from the manager
+   * Note: Does not automatically clean up component resources (e.g., sprites).
+   * Users should manually clean up resources before destroying entities.
    * @param entity - The entity to destroy (can be entity object or ID string)
    */
   destroyEntity(entity: IEntity | string): void {
     const id = typeof entity === 'string' ? entity : entity.id;
     this.entities.delete(id);
+    this.cacheInvalidated = true;
   }
 
   /**
@@ -41,10 +47,16 @@ export class EntityManager {
 
   /**
    * Get all entities managed by this manager
+   * Note: This method caches the entity array for performance. The cache is
+   * automatically invalidated when entities are added or removed.
    * @returns Array of all entities
    */
   getAllEntities(): IEntity[] {
-    return Array.from(this.entities.values());
+    if (this.cacheInvalidated) {
+      this.entitiesCache = Array.from(this.entities.values());
+      this.cacheInvalidated = false;
+    }
+    return this.entitiesCache!;
   }
 
   /**
@@ -53,9 +65,26 @@ export class EntityManager {
    * @returns Array of entities matching the query
    */
   query(...componentTypes: ComponentType<any>[]): IEntity[] {
-    return this.getAllEntities().filter(entity =>
-      componentTypes.every(type => entity.hasComponent(type))
-    );
+    const result: IEntity[] = [];
+    const entities = Array.from(this.entities.values());
+    
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      let matches = true;
+      
+      for (let j = 0; j < componentTypes.length; j++) {
+        if (!entity.hasComponent(componentTypes[j])) {
+          matches = false;
+          break;
+        }
+      }
+      
+      if (matches) {
+        result.push(entity);
+      }
+    }
+    
+    return result;
   }
 
   /**
@@ -71,6 +100,7 @@ export class EntityManager {
    */
   destroyAll(): void {
     this.entities.clear();
+    this.cacheInvalidated = true;
   }
 
   /**

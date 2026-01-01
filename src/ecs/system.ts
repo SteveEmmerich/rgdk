@@ -37,12 +37,34 @@ export abstract class System implements ISystem {
    * @returns Entities that have all required components
    */
   protected filterEntities(entities: IEntity[]): IEntity[] {
+    // Fast path: no required components, no filtering needed
     if (this.requiredComponents.length === 0) {
       return entities;
     }
-    return entities.filter(entity =>
-      this.requiredComponents.every(type => entity.hasComponent(type))
-    );
+
+    const required = this.requiredComponents;
+    const requiredLength = required.length;
+    const entityCount = entities.length;
+    const matchingEntities: IEntity[] = [];
+
+    // Optimized loop: avoid creating closures and use indexed access
+    for (let i = 0; i < entityCount; i++) {
+      const entity = entities[i];
+      let matches = true;
+      
+      for (let j = 0; j < requiredLength; j++) {
+        if (!entity.hasComponent(required[j])) {
+          matches = false;
+          break;
+        }
+      }
+      
+      if (matches) {
+        matchingEntities.push(entity);
+      }
+    }
+
+    return matchingEntities;
   }
 
   /**

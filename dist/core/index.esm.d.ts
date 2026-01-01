@@ -261,6 +261,7 @@ declare class Entity implements IEntity {
     constructor(id: string);
     /**
      * Add a component to this entity
+     * Note: Adding a component of the same type multiple times will replace the previous component.
      * @param component - The component instance to add
      */
     addComponent<T extends IComponent>(component: T): void;
@@ -294,6 +295,8 @@ declare class Entity implements IEntity {
 declare class EntityManager {
     private entities;
     private nextEntityId;
+    private entitiesCache;
+    private cacheInvalidated;
     /**
      * Create a new entity and add it to the manager
      * @returns The newly created entity
@@ -301,6 +304,8 @@ declare class EntityManager {
     createEntity(): IEntity;
     /**
      * Destroy an entity and remove it from the manager
+     * Note: Does not automatically clean up component resources (e.g., sprites).
+     * Users should manually clean up resources before destroying entities.
      * @param entity - The entity to destroy (can be entity object or ID string)
      */
     destroyEntity(entity: IEntity | string): void;
@@ -312,6 +317,8 @@ declare class EntityManager {
     getEntity(id: string): IEntity | null;
     /**
      * Get all entities managed by this manager
+     * Note: This method caches the entity array for performance. The cache is
+     * automatically invalidated when entities are added or removed.
      * @returns Array of all entities
      */
     getAllEntities(): IEntity[];

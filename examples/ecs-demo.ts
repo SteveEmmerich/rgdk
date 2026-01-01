@@ -186,9 +186,9 @@ for (let i = 0; i < ENTITY_COUNT; i++) {
 
 console.log(`Created ${entityManager.count} entities`);
 
-// Add UI text
+// Add UI text (sprites are automatically managed by renderer)
 const titleTexture = TextureUtils.createText('RGDK ECS Demo', 32, '#ecf0f1');
-const titleSprite = canvasRenderer.createSprite({
+canvasRenderer.createSprite({
   texture: titleTexture,
   x: SCREEN_WIDTH / 2,
   y: 30,
@@ -196,7 +196,7 @@ const titleSprite = canvasRenderer.createSprite({
 });
 
 const infoTexture = TextureUtils.createText(`${ENTITY_COUNT} bouncing entities`, 16, '#95a5a6');
-const infoSprite = canvasRenderer.createSprite({
+canvasRenderer.createSprite({
   texture: infoTexture,
   x: SCREEN_WIDTH / 2,
   y: 60,
