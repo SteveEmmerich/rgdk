@@ -283,17 +283,18 @@ interface LoadProgress {
 ## Dependencies
 
 ### Core Dependencies
-- `rxjs`: ^6.5.2 or ^7.x (consider upgrading)
-- `immer`: ^3.2.0 or later
+- `rxjs`: ^7.8.0 (upgraded from ^6.5.2)
+- `immer`: ^10.1.0 (upgraded from ^3.2.0)
 
 ### Peer Dependencies (to be added)
 - `pixi.js`: ^7.0.0 (for rendering)
 - `p2`: ^0.7.1 (for physics)
 
 ### Dev Dependencies
-- `typescript`: ^4.0.5 or later
-- `rollup`: ^2.33.1 or later
-- `jest`: ^26.6.3 or later
+- `typescript`: ^5.0.0 (upgraded from ^4.0.5)
+- `tsup`: ^8.5.0 (build tool, replaced rollup)
+- `@swc/core`: ^1.10.0 (required for ES5 target)
+- `jest`: ^29.7.0 (upgraded from ^26.6.3)
 - `@types/*`: Latest versions for TypeScript support
 
 ## Timeline Estimate

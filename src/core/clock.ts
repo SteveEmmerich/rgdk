@@ -2,7 +2,7 @@ import FrameInterface from './frame.interface';
 import { FPS } from '../constants';
 import { interval, animationFrameScheduler } from 'rxjs';
 import { scan } from 'rxjs/operators';
-import produce,  { Draft } from 'immer'
+import { produce, Draft } from 'immer'
 
 const initialState: FrameInterface = {
     frameStartTime: performance.now(),
