@@ -66,7 +66,7 @@ export class EntityManager {
    */
   query(...componentTypes: ComponentType<any>[]): IEntity[] {
     const result: IEntity[] = [];
-    const entities = Array.from(this.entities.values());
+    const entities = this.getAllEntities();
     
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];

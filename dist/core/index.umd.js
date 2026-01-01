@@ -3126,7 +3126,7 @@
                 componentTypes[_i] = arguments[_i];
             }
             var result = [];
-            var entities = Array.from(this.entities.values());
+            var entities = this.getAllEntities();
             for (var i = 0; i < entities.length; i++) {
                 var entity = entities[i];
                 var matches = true;
