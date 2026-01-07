@@ -503,4 +503,323 @@ var TextureUtils = /** @class */ (function () {
     return TextureUtils;
 }());
 
-export { AssetLoader, CanvasRenderer, FPS, SpriteManager, TextureUtils, assetLoader, canvasRenderer, click$, clock$1 as clock$, keydown$, keypressed$, keyup$, touch$ };
+/**
+ * Entity implementation for the ECS system.
+ * Entities are containers for components and are identified by a unique ID.
+ */
+var Entity = /** @class */ (function () {
+    /**
+     * Create a new entity with a unique ID
+     * @param id - Unique identifier for this entity
+     */
+    function Entity(id) {
+        this.components = new Map();
+        this.id = id;
+    }
+    /**
+     * Add a component to this entity
+     * Note: Adding a component of the same type multiple times will replace the previous component.
+     * @param component - The component instance to add
+     */
+    Entity.prototype.addComponent = function (component) {
+        var type = component.constructor;
+        if (this.components.has(type)) {
+            console.warn("Entity " + this.id + ": Replacing existing component of type " + type.name);
+        }
+        this.components.set(type, component);
+    };
+    /**
+     * Get a component from this entity
+     * @param type - The component class/type to retrieve
+     * @returns The component instance or null if not found
+     */
+    Entity.prototype.getComponent = function (type) {
+        return this.components.get(type) || null;
+    };
+    /**
+     * Check if this entity has a specific component
+     * @param type - The component class/type to check
+     * @returns true if the entity has the component, false otherwise
+     */
+    Entity.prototype.hasComponent = function (type) {
+        return this.components.has(type);
+    };
+    /**
+     * Remove a component from this entity
+     * @param type - The component class/type to remove
+     */
+    Entity.prototype.removeComponent = function (type) {
+        this.components.delete(type);
+    };
+    /**
+     * Get all components attached to this entity
+     * @returns Array of all component instances
+     */
+    Entity.prototype.getAllComponents = function () {
+        return Array.from(this.components.values());
+    };
+    return Entity;
+}());
+
+/**
+ * EntityManager manages the lifecycle of entities in the ECS system.
+ * Provides methods for creating, destroying, and querying entities.
+ */
+var EntityManager = /** @class */ (function () {
+    function EntityManager() {
+        this.entities = new Map();
+        this.nextEntityId = 0;
+        this.entitiesCache = null;
+        this.cacheInvalidated = true;
+    }
+    /**
+     * Create a new entity and add it to the manager
+     * @returns The newly created entity
+     */
+    EntityManager.prototype.createEntity = function () {
+        var id = this.generateEntityId();
+        var entity = new Entity(id);
+        this.entities.set(id, entity);
+        this.cacheInvalidated = true;
+        return entity;
+    };
+    /**
+     * Destroy an entity and remove it from the manager
+     * Note: Does not automatically clean up component resources (e.g., sprites).
+     * Users should manually clean up resources before destroying entities.
+     * @param entity - The entity to destroy (can be entity object or ID string)
+     */
+    EntityManager.prototype.destroyEntity = function (entity) {
+        var id = typeof entity === 'string' ? entity : entity.id;
+        this.entities.delete(id);
+        this.cacheInvalidated = true;
+    };
+    /**
+     * Get an entity by its ID
+     * @param id - The entity ID
+     * @returns The entity or null if not found
+     */
+    EntityManager.prototype.getEntity = function (id) {
+        return this.entities.get(id) || null;
+    };
+    /**
+     * Get all entities managed by this manager
+     * Note: This method caches the entity array for performance. The cache is
+     * automatically invalidated when entities are added or removed.
+     * @returns Array of all entities
+     */
+    EntityManager.prototype.getAllEntities = function () {
+        if (this.cacheInvalidated) {
+            this.entitiesCache = Array.from(this.entities.values());
+            this.cacheInvalidated = false;
+        }
+        return this.entitiesCache;
+    };
+    /**
+     * Query entities that have all specified components
+     * @param componentTypes - Component types that entities must have
+     * @returns Array of entities matching the query
+     */
+    EntityManager.prototype.query = function () {
+        var componentTypes = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            componentTypes[_i] = arguments[_i];
+        }
+        var result = [];
+        var entities = this.getAllEntities();
+        for (var i = 0; i < entities.length; i++) {
+            var entity = entities[i];
+            var matches = true;
+            for (var j = 0; j < componentTypes.length; j++) {
+                if (!entity.hasComponent(componentTypes[j])) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                result.push(entity);
+            }
+        }
+        return result;
+    };
+    Object.defineProperty(EntityManager.prototype, "count", {
+        /**
+         * Get the total number of entities
+         * @returns The entity count
+         */
+        get: function () {
+            return this.entities.size;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Destroy all entities
+     */
+    EntityManager.prototype.destroyAll = function () {
+        this.entities.clear();
+        this.cacheInvalidated = true;
+    };
+    /**
+     * Generate a unique entity ID
+     * @returns A unique string ID
+     */
+    EntityManager.prototype.generateEntityId = function () {
+        return "entity_" + this.nextEntityId++;
+    };
+    return EntityManager;
+}());
+
+/**
+ * Abstract base class for systems.
+ * Systems implement game logic that operates on entities with specific components.
+ */
+var System = /** @class */ (function () {
+    function System() {
+        this.enabled = true;
+        this.requiredComponents = [];
+    }
+    /**
+     * Update method called each frame
+     * Filters entities by required components before processing
+     * @param entities - Array of all entities
+     * @param deltaTime - Time elapsed since last frame in milliseconds
+     */
+    System.prototype.update = function (entities, deltaTime) {
+        if (!this.enabled)
+            return;
+        var matchingEntities = this.filterEntities(entities);
+        this.process(matchingEntities, deltaTime);
+    };
+    /**
+     * Filter entities by required components
+     * @param entities - All entities to filter
+     * @returns Entities that have all required components
+     */
+    System.prototype.filterEntities = function (entities) {
+        // Fast path: no required components, no filtering needed
+        if (this.requiredComponents.length === 0) {
+            return entities;
+        }
+        var required = this.requiredComponents;
+        var requiredLength = required.length;
+        var entityCount = entities.length;
+        var matchingEntities = [];
+        // Optimized loop: avoid creating closures and use indexed access
+        for (var i = 0; i < entityCount; i++) {
+            var entity = entities[i];
+            var matches = true;
+            for (var j = 0; j < requiredLength; j++) {
+                if (!entity.hasComponent(required[j])) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                matchingEntities.push(entity);
+            }
+        }
+        return matchingEntities;
+    };
+    /**
+     * Enable this system
+     */
+    System.prototype.enable = function () {
+        this.enabled = true;
+    };
+    /**
+     * Disable this system (it will not be updated)
+     */
+    System.prototype.disable = function () {
+        this.enabled = false;
+    };
+    /**
+     * Check if this system is enabled
+     * @returns true if enabled, false otherwise
+     */
+    System.prototype.isEnabled = function () {
+        return this.enabled;
+    };
+    return System;
+}());
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+function __spreadArrays() {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+}
+
+/**
+ * SystemManager manages the execution of systems in the ECS architecture.
+ * Systems are executed in the order they are registered.
+ *
+ * TODO: Future Enhancement - Multi-Phase Update Cycles
+ * When integrating physics (P2.js - see REQUIREMENTS.md §2), consider adding:
+ * - fixedUpdate(entities, fixedDeltaTime): For physics simulation with fixed timestep
+ * - lateUpdate(entities, deltaTime): For camera, UI, and post-processing logic
+ * This will ensure physics stability and proper update ordering without breaking existing code.
+ */
+var SystemManager = /** @class */ (function () {
+    function SystemManager() {
+        this.systems = [];
+    }
+    /**
+     * Register a system to be executed each frame
+     * Systems are executed in the order they are registered
+     * @param system - The system to register
+     */
+    SystemManager.prototype.registerSystem = function (system) {
+        this.systems.push(system);
+    };
+    /**
+     * Unregister a system
+     * @param system - The system to unregister
+     */
+    SystemManager.prototype.unregisterSystem = function (system) {
+        var index = this.systems.indexOf(system);
+        if (index !== -1) {
+            this.systems.splice(index, 1);
+        }
+    };
+    /**
+     * Update all registered systems
+     * @param entities - Array of all entities
+     * @param deltaTime - Time elapsed since last frame in milliseconds
+     */
+    SystemManager.prototype.update = function (entities, deltaTime) {
+        this.systems.forEach(function (system) { return system.update(entities, deltaTime); });
+    };
+    /**
+     * Get all registered systems
+     * @returns Array of systems
+     */
+    SystemManager.prototype.getSystems = function () {
+        return __spreadArrays(this.systems);
+    };
+    /**
+     * Clear all registered systems
+     */
+    SystemManager.prototype.clear = function () {
+        this.systems = [];
+    };
+    return SystemManager;
+}());
+
+export { AssetLoader, CanvasRenderer, Entity, EntityManager, FPS, SpriteManager, System, SystemManager, TextureUtils, assetLoader, canvasRenderer, click$, clock$1 as clock$, keydown$, keypressed$, keyup$, touch$ };

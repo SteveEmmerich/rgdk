@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RGDK - ECS Demo</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #1a1a1a;
+      color: #fff;
+    }
+    h1 {
+      text-align: center;
+    }
+    p {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #game-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    canvas {
+      border: 2px solid #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>RGDK - Entity Component System Demo</h1>
+  <p>Watch 50 entities with Position, Velocity, and Render components bounce around!</p>
+  <p>Open the console to see system updates</p>
+  <div id="game-container"></div>
+
+  <!-- Load RxJS from CDN -->
+  <script src="https://unpkg.com/rxjs@6.5.2/bundles/rxjs.umd.min.js"></script>
+  
+  <!-- Load RGDK UMD bundle -->
+  <!-- Note: This HTML file should be placed at the project root to properly load the dist files -->
+  <script src="./dist/core/index.umd.js"></script>
+
+  <script>
+    // Use RGDK from global scope (UMD)
+    const { 
+      clock$, 
+      EntityManager, 
+      SystemManager, 
+      System, 
+      CanvasRenderer,
+      TextureUtils 
+    } = rgdk;
+
+    const SCREEN_WIDTH = 800;
+    const SCREEN_HEIGHT = 600;
+    const ENTITY_COUNT = 50;
+
+    // ===== COMPONENTS =====
+    class PositionComponent {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+      }
+    }
+
+    class VelocityComponent {
+      constructor(vx, vy) {
+        this.vx = vx;
+        this.vy = vy;
+      }
+    }
+
+    class RenderComponent {
+      constructor(sprite) {
+        this.sprite = sprite;
+      }
+    }
+
+    class BoundsComponent {
+      constructor(width, height) {
+        this.width = width;
+        this.height = height;
+      }
+    }
+
+    // ===== SYSTEMS =====
+    class MovementSystem extends System {
+      constructor() {
+        super();
+        this.requiredComponents = [PositionComponent, VelocityComponent];
+      }
+
+      process(entities, deltaTime) {
+        entities.forEach(entity => {
+          const pos = entity.getComponent(PositionComponent);
+          const vel = entity.getComponent(VelocityComponent);
+
+          if (pos && vel) {
+            pos.x += vel.vx * (deltaTime / 1000);
+            pos.y += vel.vy * (deltaTime / 1000);
+          }
+        });
+      }
+    }
+
+    class BoundsSystem extends System {
+      constructor(screenWidth, screenHeight) {
+        super();
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        this.requiredComponents = [PositionComponent, VelocityComponent, BoundsComponent];
+      }
+
+      process(entities, deltaTime) {
+        entities.forEach(entity => {
+          const pos = entity.getComponent(PositionComponent);
+          const vel = entity.getComponent(VelocityComponent);
+          const bounds = entity.getComponent(BoundsComponent);
+
+          if (pos && vel && bounds) {
+            // Bounce off left/right edges
+            if (pos.x - bounds.width / 2 <= 0 || pos.x + bounds.width / 2 >= this.screenWidth) {
+              vel.vx *= -1;
+              pos.x = Math.max(bounds.width / 2, Math.min(this.screenWidth - bounds.width / 2, pos.x));
+            }
+
+            // Bounce off top/bottom edges
+            if (pos.y - bounds.height / 2 <= 0 || pos.y + bounds.height / 2 >= this.screenHeight) {
+              vel.vy *= -1;
+              pos.y = Math.max(bounds.height / 2, Math.min(this.screenHeight - bounds.height / 2, pos.y));
+            }
+          }
+        });
+      }
+    }
+
+    class RenderSystem extends System {
+      constructor() {
+        super();
+        this.requiredComponents = [PositionComponent, RenderComponent];
+      }
+
+      process(entities, deltaTime) {
+        entities.forEach(entity => {
+          const pos = entity.getComponent(PositionComponent);
+          const render = entity.getComponent(RenderComponent);
+
+          if (pos && render) {
+            render.sprite.x = pos.x;
+            render.sprite.y = pos.y;
+          }
+        });
+      }
+    }
+
+    // ===== MAIN GAME SETUP =====
+    const renderer = new CanvasRenderer();
+    const container = document.getElementById('game-container');
+    
+    renderer.init({
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT,
+      backgroundColor: 0x2c3e50,
+      parent: container
+    });
+
+    // Create ECS managers
+    const entityManager = new EntityManager();
+    const systemManager = new SystemManager();
+
+    // Register systems
+    systemManager.registerSystem(new MovementSystem());
+    systemManager.registerSystem(new BoundsSystem(SCREEN_WIDTH, SCREEN_HEIGHT));
+    systemManager.registerSystem(new RenderSystem());
+
+    // Create entities
+    console.log('Creating ' + ENTITY_COUNT + ' entities...');
+    for (let i = 0; i < ENTITY_COUNT; i++) {
+      const entity = entityManager.createEntity();
+
+      // Random position
+      const x = Math.random() * SCREEN_WIDTH;
+      const y = Math.random() * SCREEN_HEIGHT;
+
+      // Random velocity
+      const speed = 50 + Math.random() * 100;
+      const angle = Math.random() * Math.PI * 2;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+
+      // Random color and size
+      const hue = Math.floor(Math.random() * 360);
+      const radius = 10 + Math.random() * 20;
+      const color = 'hsl(' + hue + ', 70%, 60%)';
+
+      // Create sprite
+      const texture = TextureUtils.createCircle(radius, color, true);
+      const sprite = renderer.createSprite({
+        texture: texture,
+        x: x,
+        y: y,
+        anchor: { x: 0.5, y: 0.5 }
+      });
+
+      // Add components
+      entity.addComponent(new PositionComponent(x, y));
+      entity.addComponent(new VelocityComponent(vx, vy));
+      entity.addComponent(new RenderComponent(sprite));
+      entity.addComponent(new BoundsComponent(radius * 2, radius * 2));
+    }
+
+    console.log('Created ' + entityManager.count + ' entities');
+
+    // Add UI text
+    const titleTexture = TextureUtils.createText('RGDK ECS Demo', 32, '#ecf0f1');
+    const titleSprite = renderer.createSprite({
+      texture: titleTexture,
+      x: SCREEN_WIDTH / 2,
+      y: 30,
+      anchor: { x: 0.5, y: 0.5 }
+    });
+
+    const infoTexture = TextureUtils.createText(ENTITY_COUNT + ' bouncing entities', 16, '#95a5a6');
+    const infoSprite = renderer.createSprite({
+      texture: infoTexture,
+      x: SCREEN_WIDTH / 2,
+      y: 60,
+      anchor: { x: 0.5, y: 0.5 }
+    });
+
+    // Game loop
+    let frameCount = 0;
+    clock$.subscribe((frame) => {
+      frameCount++;
+
+      // Update all systems
+      const entities = entityManager.getAllEntities();
+      systemManager.update(entities, frame.deltaTime);
+
+      // Render
+      renderer.render();
+
+      // Log stats every 60 frames
+      if (frameCount % 60 === 0) {
+        console.log('Frame ' + frameCount + ': ' + entityManager.count + ' entities, ' + 
+                    frame.deltaTime.toFixed(2) + 'ms delta');
+      }
+    });
+
+    console.log('ECS Demo running! Watch the entities bounce around the screen.');
+  </script>
+</body>
+</html>

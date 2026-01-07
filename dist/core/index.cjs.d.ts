@@ -199,5 +199,241 @@ declare class TextureUtils {
      */
     static colorToString(color: number): string;
 }
-export { FPS, default as FrameInterface, default as clock$, click$, keydown$, keyup$, keypressed$, touch$, AssetManifest, LoadProgress, IAssetLoader, AssetLoader, assetLoader, RendererConfig, SpriteConfig, ISprite, IRenderer, CanvasRenderer, canvasRenderer, SpriteManager, TextureUtils };
+/**
+ * Base interface for all components.
+ * Components are pure data containers with no logic.
+ */
+interface IComponent {
+}
+/**
+ * Type helper to identify component types
+ * Used for type-safe component retrieval and queries
+ */
+type ComponentType<T extends IComponent> = new (...args: any[]) => T;
+/**
+ * Interface for entities in the ECS system.
+ * An entity is a container for components with a unique identifier.
+ */
+interface IEntity {
+    /**
+     * Unique identifier for this entity
+     */
+    readonly id: string;
+    /**
+     * Add a component to this entity
+     * @param component - The component instance to add
+     */
+    addComponent<T extends IComponent>(component: T): void;
+    /**
+     * Get a component from this entity
+     * @param type - The component class/type to retrieve
+     * @returns The component instance or null if not found
+     */
+    getComponent<T extends IComponent>(type: ComponentType<T>): T | null;
+    /**
+     * Check if this entity has a specific component
+     * @param type - The component class/type to check
+     * @returns true if the entity has the component, false otherwise
+     */
+    hasComponent(type: ComponentType<any>): boolean;
+    /**
+     * Remove a component from this entity
+     * @param type - The component class/type to remove
+     */
+    removeComponent(type: ComponentType<any>): void;
+    /**
+     * Get all components attached to this entity
+     * @returns Array of all component instances
+     */
+    getAllComponents(): IComponent[];
+}
+/**
+ * Entity implementation for the ECS system.
+ * Entities are containers for components and are identified by a unique ID.
+ */
+declare class Entity implements IEntity {
+    private components;
+    readonly id: string;
+    /**
+     * Create a new entity with a unique ID
+     * @param id - Unique identifier for this entity
+     */
+    constructor(id: string);
+    /**
+     * Add a component to this entity
+     * Note: Adding a component of the same type multiple times will replace the previous component.
+     * @param component - The component instance to add
+     */
+    addComponent<T extends IComponent>(component: T): void;
+    /**
+     * Get a component from this entity
+     * @param type - The component class/type to retrieve
+     * @returns The component instance or null if not found
+     */
+    getComponent<T extends IComponent>(type: ComponentType<T>): T | null;
+    /**
+     * Check if this entity has a specific component
+     * @param type - The component class/type to check
+     * @returns true if the entity has the component, false otherwise
+     */
+    hasComponent(type: ComponentType<any>): boolean;
+    /**
+     * Remove a component from this entity
+     * @param type - The component class/type to remove
+     */
+    removeComponent(type: ComponentType<any>): void;
+    /**
+     * Get all components attached to this entity
+     * @returns Array of all component instances
+     */
+    getAllComponents(): IComponent[];
+}
+/**
+ * EntityManager manages the lifecycle of entities in the ECS system.
+ * Provides methods for creating, destroying, and querying entities.
+ */
+declare class EntityManager {
+    private entities;
+    private nextEntityId;
+    private entitiesCache;
+    private cacheInvalidated;
+    /**
+     * Create a new entity and add it to the manager
+     * @returns The newly created entity
+     */
+    createEntity(): IEntity;
+    /**
+     * Destroy an entity and remove it from the manager
+     * Note: Does not automatically clean up component resources (e.g., sprites).
+     * Users should manually clean up resources before destroying entities.
+     * @param entity - The entity to destroy (can be entity object or ID string)
+     */
+    destroyEntity(entity: IEntity | string): void;
+    /**
+     * Get an entity by its ID
+     * @param id - The entity ID
+     * @returns The entity or null if not found
+     */
+    getEntity(id: string): IEntity | null;
+    /**
+     * Get all entities managed by this manager
+     * Note: This method caches the entity array for performance. The cache is
+     * automatically invalidated when entities are added or removed.
+     * @returns Array of all entities
+     */
+    getAllEntities(): IEntity[];
+    /**
+     * Query entities that have all specified components
+     * @param componentTypes - Component types that entities must have
+     * @returns Array of entities matching the query
+     */
+    query(...componentTypes: ComponentType<any>[]): IEntity[];
+    /**
+     * Get the total number of entities
+     * @returns The entity count
+     */
+    get count(): number;
+    /**
+     * Destroy all entities
+     */
+    destroyAll(): void;
+    /**
+     * Generate a unique entity ID
+     * @returns A unique string ID
+     */
+    private generateEntityId;
+}
+/**
+ * Interface for systems in the ECS architecture.
+ * Systems contain logic that operates on entities with specific components.
+ */
+interface ISystem {
+    /**
+     * Update method called each frame by the system manager
+     * @param entities - Array of all entities in the world
+     * @param deltaTime - Time elapsed since last frame in milliseconds
+     */
+    update(entities: IEntity[], deltaTime: number): void;
+}
+/**
+ * Abstract base class for systems.
+ * Systems implement game logic that operates on entities with specific components.
+ */
+declare abstract class System implements ISystem {
+    private enabled;
+    protected requiredComponents: ComponentType<any>[];
+    /**
+     * Update method called each frame
+     * Filters entities by required components before processing
+     * @param entities - Array of all entities
+     * @param deltaTime - Time elapsed since last frame in milliseconds
+     */
+    update(entities: IEntity[], deltaTime: number): void;
+    /**
+     * Process entities that match the required components
+     * Override this method in derived classes to implement system logic
+     * @param entities - Filtered entities with required components
+     * @param deltaTime - Time elapsed since last frame in milliseconds
+     */
+    protected abstract process(entities: IEntity[], deltaTime: number): void;
+    /**
+     * Filter entities by required components
+     * @param entities - All entities to filter
+     * @returns Entities that have all required components
+     */
+    protected filterEntities(entities: IEntity[]): IEntity[];
+    /**
+     * Enable this system
+     */
+    enable(): void;
+    /**
+     * Disable this system (it will not be updated)
+     */
+    disable(): void;
+    /**
+     * Check if this system is enabled
+     * @returns true if enabled, false otherwise
+     */
+    isEnabled(): boolean;
+}
+/**
+ * SystemManager manages the execution of systems in the ECS architecture.
+ * Systems are executed in the order they are registered.
+ *
+ * TODO: Future Enhancement - Multi-Phase Update Cycles
+ * When integrating physics (P2.js - see REQUIREMENTS.md §2), consider adding:
+ * - fixedUpdate(entities, fixedDeltaTime): For physics simulation with fixed timestep
+ * - lateUpdate(entities, deltaTime): For camera, UI, and post-processing logic
+ * This will ensure physics stability and proper update ordering without breaking existing code.
+ */
+declare class SystemManager {
+    private systems;
+    /**
+     * Register a system to be executed each frame
+     * Systems are executed in the order they are registered
+     * @param system - The system to register
+     */
+    registerSystem(system: ISystem): void;
+    /**
+     * Unregister a system
+     * @param system - The system to unregister
+     */
+    unregisterSystem(system: ISystem): void;
+    /**
+     * Update all registered systems
+     * @param entities - Array of all entities
+     * @param deltaTime - Time elapsed since last frame in milliseconds
+     */
+    update(entities: IEntity[], deltaTime: number): void;
+    /**
+     * Get all registered systems
+     * @returns Array of systems
+     */
+    getSystems(): ISystem[];
+    /**
+     * Clear all registered systems
+     */
+    clear(): void;
+}
+export { FPS, default as FrameInterface, default as clock$, click$, keydown$, keyup$, keypressed$, touch$, AssetManifest, LoadProgress, IAssetLoader, AssetLoader, assetLoader, RendererConfig, SpriteConfig, ISprite, IRenderer, CanvasRenderer, canvasRenderer, SpriteManager, TextureUtils, IComponent, ComponentType, IEntity, Entity, EntityManager, ISystem, System, SystemManager };
 //# sourceMappingURL=index.cjs.d.ts.map

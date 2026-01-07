@@ -112,13 +112,13 @@ interface PhysicsConfig {
 - System execution integrated with game loop
 
 #### Acceptance Criteria
-- [ ] Entity manager for creating/destroying entities
-- [ ] Component registry with type checking
-- [ ] System base class with update lifecycle
-- [ ] Query system for entities with specific components
-- [ ] Integration with game loop observable
+- [x] Entity manager for creating/destroying entities
+- [x] Component registry with type checking
+- [x] System base class with update lifecycle
+- [x] Query system for entities with specific components
+- [x] Integration with game loop observable
 - [ ] Performance benchmarks (target: 1000+ entities at 60fps)
-- [ ] Example showing ECS pattern
+- [x] Example showing ECS pattern
 
 #### Technical Design
 ```typescript
